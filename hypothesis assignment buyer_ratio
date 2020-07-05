@@ -1,0 +1,6 @@
+buyer_ratio<- read.csv(file.choose())
+View(buyer_ratio)
+buyer_ratio1<- buyer_ratio[1:2],c(2:5)]
+Stacked_Data<- stack(buyer_ratio1)
+table(Stacked_Data$values,Stacked_Data$ind)
+chisq.test(table(Stacked_Data$values,Stacked_Data$ind))
