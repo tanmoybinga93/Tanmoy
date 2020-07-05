@@ -1,0 +1,6 @@
+telecall_data<- read.csv(file.choose())
+View(telecall_data)
+Stacked_Data<- stack(telecall_data)
+View(Stacked_Data)
+table(Stacked_Data$values,Stacked_Data$ind)
+chisq.test(table(Stacked_Data$values,Stacked_Data$ind))
