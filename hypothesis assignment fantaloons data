@@ -1,0 +1,6 @@
+fantaloons_data<- read.csv(file.choose())
+View(fantaloons_data)
+Stacked_Data<- stack(fantaloons_data)
+View(Stacked_Data)
+table(Stacked_Data$values,Stacked_Data$ind)
+prop.test(x=c(287,113),n=c(400,400),conf.level = 0.95,correct = FALSE,alternative = "two.sided")
