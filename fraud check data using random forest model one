@@ -1,0 +1,75 @@
+fraud_data<- read.csv(file.choose())
+View(fraud_data)
+str(fraud_data)
+mean(fraud_data$Taxable.Income)
+hist(fraud_data$Taxable.Income)
+boxplot(fraud_data$Taxable.Income)
+library(randomForest)
+attach(fraud_data)
+#creating risk good model based on taxable income
+risk_good<- ifelse(fraud_data$Taxable.Income<= 30000, "risky","good")
+
+model1<- data.frame(fraud_data , risk_good)  
+
+risk_good_fact<- as.factor(risk_good)
+
+undergrad_fact<- as.factor(fraud_data$Undergrad)
+
+marital_fact<- as.factor(fraud_data$Marital.Status)
+
+urban_fact<- as.factor(fraud_data$Urban)
+
+forest1<- randomForest(risk_good_fact~ undergrad_fact + marital_fact + City.Population  + Work.Experience + urban_fact)
+
+summary(forest1)
+
+training_data<- model1[1:300,]
+
+testing_data<- model1[301:600,]
+
+risk_good_train<- as.factor(training_data$risk_good)
+
+undergrad_train<- as.factor(training_data$Undergrad)
+
+marital_train<- as.factor(training_data$Marital.Status)
+
+urban_train<- as.factor(training_data$Urban)
+
+forest2<- randomForest(risk_good_train~ undergrad_train + marital_train + urban_train)
+
+summary(forest2)
+ 
+View(forest2)
+
+plot(forest2)
+
+risk_good_test<- as.factor(testing_data$risk_good)
+
+undergrad_test<- as.factor(testing_data$Undergrad)
+
+marital_test<- as.factor(testing_data$Marital.Status)
+
+urban_test<- as.factor(testing_data$Urban)
+
+forest3<- randomForest(risk_good_test~ undergrad_test + marital_test + urban_test)
+
+summary(forest2)
+
+plot(forest3)
+
+View(forest3)
+
+pred_tree<- as.data.frame(predict(forest2,newdata = testing_data))
+
+pred_tree["FINAL"]<- NULL
+
+pred_test_df<- predict(forest2, newdata = testing_data)
+
+pred_test_df_fact<- as.factor(pred_test_df)
+
+mean(pred_test_df==testing_data$risk_good)     # 0.82 accuracy 
+
+library(caret)
+
+confusionMatrix(risk_good_test,pred_test_df_fact)  #Test P-Value : 5.498e-13  Sensitivity : 0.82            
+Specificity :   NA   95% CI : (0.7718, 0.8618)  
