@@ -1,0 +1,45 @@
+install.packages("MASS")
+library(randomForest)
+library(caret)
+library(MASS)
+fraudcheck <- read.csv(file.choose())
+View(fraudcheck)
+set.seed(1234)
+attach(fraudcheck)
+hist(Taxable.Income)
+Risky_good <- ifelse(Taxable.Income <=30000, "Risky", "Good")
+Fctemp = data.frame(fraudcheck, Risky_good)
+View(Fctemp)
+
+FC= Fctemp[,c(1:7)]
+str(FC)
+table(FC$Risky_good)
+set.seed(2)
+ind <- sample(2, nrow(FC), replace= TRUE, prob = c(0.7,0.3))
+train <- FC[ind==1,]
+test <- FC[ind==2,]
+rf <- randomForest(as.factor(Risky_good)~., data=train)
+rf
+attributes(rf)
+pred1 <- predict(rf, train)
+head(pred1)
+head(train$Risky_good)
+tr <- train$Risky_good
+fact1<- as.factor(pred1)
+fact2<- as.factor(tr)
+confusionMatrix(fact1,fact2)
+
+pred2 <- predict(rf, test)
+fact3 <- as.factor(pred2)
+tr1 <- test$Risky_good
+fact4 <- as.factor(tr1)
+confusionMatrix(fact3,fact4)  #
+
+##Prediction Good Risky
+Good   149     0
+Risky    0    38
+# Accuracy : 1          
+95% CI : (0.9805, 1)
+No Information Rate : 0.7968     
+P-Value [Acc > NIR] : < 2.2e-16 
+
