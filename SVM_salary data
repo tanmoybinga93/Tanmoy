@@ -1,0 +1,111 @@
+library(kernlab)
+library(caret)
+library(ggplot2)
+library(plyr)
+library(psych)
+library(e1071)
+
+salary_train<- read.csv(file.choose())
+View(salary_train)
+str(salary_train)
+class(salary_train)
+attach(salary_train)
+
+
+frame<- as.data.frame(salary_train)
+
+salary_train$educationno<- as.factor(salary_train$educationno)
+salary_train$workclass<- as.factor(salary_train$workclass)
+salary_train$Salary<- as.factor(salary_train$Salary)
+salary_train$education<- as.factor(salary_train$education)
+salary_train$maritalstatus<- as.factor(salary_train$maritalstatus)
+salary_train$occupation<- as.factor(salary_train$occupation)
+salary_train$relationship<- as.factor(salary_train$relationship)
+salary_train$race<- as.factor(salary_train$race)
+salary_train$sex<- as.factor(salary_train$sex)
+salary_train$native<- as.factor(salary_train$native)
+salary_test<- read.csv(file.choose())
+View(salary_test)
+str(salary_test)
+class(salary_test)
+
+frame1<- as.data.frame(salary_test)
+
+salary_test$educationno<- as.factor(salary_test$educationno)
+
+#Visualization and univarient, Bivarient plot 
+
+ggplot(data = salary_train, aes(x = salary_train$Salary,y = salary_train$age , fill = salary_train$Salary)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = salary_train, aes(x = salary_train$Salary,y = salary_train$workclass , fill = salary_train$Salary)) + geom_boxplot() + ggtitle("Box Plot")
+ 
+plot(salary_train$workclass,salary_train$Salary, data = salary_train)
+
+plot(salary_train$education,salary_train$Salary, data = salary_train)
+
+plot(salary_train$educationno, salary_train$Salary, data = salary_train)
+
+plot(salary_train$maritalstatus,salary_train$Salary, data = salary_train)
+
+plot(salary_train$occupation,salary_train$Salary, data = salary_train)
+
+plot(salary_train$relationship,salary_train$Salary, data = salary_train)
+
+plot(salary_train$race,salary_train$Salary, data = salary_train)
+
+plot(salary_train$sex,salary_train$Salary, data = salary_train)
+
+ggplot(data=salary_train,aes(x=salary_train$Salary, y = salary_train$capitalgain, fill = salary_train$Salary)) +
+  geom_boxplot() +
+  ggtitle("Box Plot")
+
+ggplot(data=salary_train,aes(x=salary_train$Salary, y = salary_train$capitalloss, fill = salary_train$Salary)) +
+  geom_boxplot() +
+  ggtitle("Box Plot")
+
+ggplot(data=salary_train,aes(x=salary_train$Salary, y = salary_train$hoursperweek, fill = salary_train$Salary)) +
+  geom_boxplot() +
+  ggtitle("Box Plot")
+
+plot(salary_train$native,salary_train$Salary, data = salary_train)
+
+# Density plot 
+
+ggplot(data=salary_train,aes(x=salary_train$age, fill = salary_train$Salary)) +
+  geom_density(alpha = 0.9, color = 'violet')
+
+ggplot(data=salary_train,aes(x=salary_train$education, fill = salary_train$Salary)) +
+  geom_density(alpha = 0.9, color = 'red')
+
+ggplot(data=salary_train,aes(x=salary_train$educationno, fill = salary_train$Salary)) +
+  geom_density(alpha = 0.9, color = 'green')
+
+##### Building Model #####
+
+model1<- ksvm(salary_train$Salary~.,data = salary_train , kernel= "vanilladot")
+View(model1)    ### number of support vector= 10599
+
+salary_prediction<- predict(model1, salary_test)
+table(salary_prediction, salary_test$Salary)   #######   salary_prediction  <=50K  >50K
+                                                                      <=50K  10601  1554
+                                                                      
+                                                                       >50K     759  2146
+
+agreement<- salary_prediction == salary_test$Salary
+table(agreement)    #################################### FALSE  TRUE 
+                                                          2313 12747 
+prop.table(table(agreement))  ########################## FALSE      TRUE 
+                                                      0.1535857 0.8464143 
+model1_pred<- predict(model1, newdata = salary_test)
+mean(model1_pred == salary_test$Salary)  ############### mean = 84.64 
+
+model2<-ksvm(salary_train$Salary~., 
+                  data= salary_train,kernel = "rbfdot")
+pred_model2<-predict(model2,newdata = salary_test)
+mean(pred_model2==salary_test$Salary) ################# mean = 85.20
+
+model3<- ksvm(salary_train$Salary~.,data = salary_train , kernel= "besseldot")
+pred_model3<- predict(model3, newdata = salary_test)
+mean(pred_model3==salary_test$salary)    #############  mean = 83.40   
+
+######### As "rbfdot" model has its higher mean value, hence we would be taking "rbfdot" model here. 
