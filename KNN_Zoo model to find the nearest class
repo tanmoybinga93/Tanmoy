@@ -1,0 +1,67 @@
+install.packages("pROC")
+install.packages("mlbench")
+install.packages("mlbench")
+library(caret)
+library(pROC)
+library(mlbench)
+library(lattice)
+zoo <- read.csv(file.choose())
+View(zoo)
+str(zoo)
+head(zoo)
+attach(zoo)
+zoo1 <- zoo[,2:18]
+zoo1$hair <- as.factor(zoo1$hair)
+zoo1$feathers <- as.factor(zoo1$feathers)
+zoo1$eggs <- as.factor(zoo1$eggs)
+zoo1$milk <- as.factor(zoo1$milk)
+zoo1$airborne <- as.factor(zoo1$airborne)
+zoo1$aquatic <- as.factor(zoo1$aquatic)
+zoo1$predator <- as.factor(zoo1$predator)
+zoo1$toothed<-as.factor(zoo1$toothed)
+zoo1$backbone <- as.factor(zoo1$backbone)
+zoo1$breathes <- as.factor(zoo1$breathes)
+zoo1$venomous <- as.factor(zoo1$venomous)
+zoo1$fins <- as.factor(zoo1$fins)
+zoo1$legs <- as.factor(zoo1$legs)
+zoo1$tail <- as.factor(zoo1$tail)
+zoo1$domestic <- as.factor(zoo1$domestic)
+zoo1$catsize <- as.factor(zoo1$catsize)
+zoo1$type <- as.factor(zoo1$type)
+
+
+set.seed(123)
+ind <- sample(2, nrow(zoo1), replace= T, prob= c(0.7, 0.3))
+train <- zoo1[ind==1,]
+test <- zoo1[ind==2,]
+trcontrol <-trainControl(method = "repeatedcv", number=10, repeats =3)   ### resampling : cross validated 10 times, repeated 3 times. 
+set.seed(222)
+
+fit <-train(type~., data=train, method='knn', tuneLength=20,
+            trControl=trcontrol, preProc=c("center","scale"))
+fit       ########################################################K-nearest neighbours 72 samples , 16 predictors, 7 classes . Thre final value of thw model used is K = 7 for its high accuracy.                                                     ######
+plot(fit)
+varImp(fit)    ###################### ROC curve variable importance ########  
+pred <-predict(fit, newdata=test)
+confusionMatrix(pred, test$type)    , ###### Accuracy = 0.82, 95% CI: (0.6423, 0.9415), P-value: 0.0001373 , kappa = 0.7599, 
+
+#######                  Class: 1 Class: 2 Class: 3 Class: 4 Class: 5 Class: 6
+## Sensitivity            0.8571   1.0000       NA  1.00000  0.00000  1.00000
+## Specificity            1.0000   1.0000        1  0.85185  1.00000  0.96296
+## Pos Pred Value         1.0000   1.0000       NA  0.33333      NaN  0.66667
+## Neg Pred Value         0.8824   1.0000       NA  1.00000  0.93103  1.00000
+## Prevalence             0.4828   0.2414        0  0.06897  0.06897  0.06897
+## Detection Rate         0.4138   0.2414        0  0.06897  0.00000  0.06897
+## Detection Prevalence   0.4138   0.2414        0  0.20690  0.00000  0.10345
+## Balanced Accuracy      0.9286   1.0000       NA  0.92593  0.50000  0.98148
+##                      Class: 7
+## Sensitivity           0.50000
+## Specificity           1.00000
+## Pos Pred Value        1.00000
+## Neg Pred Value        0.96429
+## Prevalence            0.06897
+## Detection Rate        0.03448
+## Detection Prevalence  0.03448
+## Balanced Accuracy     0.75000
+# 89.66 % is accuracy
+
