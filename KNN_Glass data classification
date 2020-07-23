@@ -1,0 +1,135 @@
+library(caret)
+library(pROC)
+library(mlbench)
+library(lattice)
+library(gmodels)
+library(class)
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+library(caTools)
+
+Glass_data<- read.csv(file.choose())
+View(Glass_data)
+str(Glass_data)
+class(Glass_data)
+attach(Glass_data)
+
+###################################################### EDA of glass data###############################################
+table(Glass_data$Type)     #### 1  2  3  5  6  7 
+                                70 76 17 13  9 29
+                                
+round(prop.table(table(Glass_data$Type))*100,1)   #### 1    2    3    5    6    7 
+                                                     32.7 35.5  7.9  6.1  4.2 13.6 
+                                                     
+                                                     
+summary(Glass_data)
+
+corrplot(cor(Glass_data))  ### relation between different features in glass data sets. 
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$RI , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$Na , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$Mg , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$Al , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")      
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$Si , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$K , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$Ca , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$Ba , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+ggplot(data = Glass_data, aes(x = Glass_data$Type,y = Glass_data$Fe , fill = Glass_data$Type)) + geom_boxplot() + ggtitle("Box Plot")
+
+cor(Glass_data)
+
+plot(Glass_data$RI,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$Na,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$Mg,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$Al,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$Si,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$K,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$Ca,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$Ba,Glass_data$Type, data = Glass_data)
+
+plot(Glass_data$Fe,Glass_data$Type, data = Glass_data)
+
+######################################################## Building Model############################################
+
+## create a function to normalize the data## 
+standard.feature<- scale(Glass_data[1:9])
+data<- cbind(standard.feature,Glass_data[10])
+View(data)
+
+## checking missing vales## 
+anyNA(data)    ### false 
+
+## building train and test data##
+
+set.seed(100)
+
+sample<- sample.split(data$Type, SplitRatio = 0.70)
+
+train<- subset(data, sample == TRUE)
+train_fact<- as.factor(train)
+train$Type<- as.factor(train$Type)
+test<- subset(data, sample == FALSE)
+test_fact<- as.factor(test)
+test$Type<- as.factor(test$Type)
+
+###Building KNN model ###
+
+knn_type<- knn(train[1:9],test[1:9],train$Type, k = 1)
+fact<- as.factor(knn_type)
+
+#Error in prediction #
+
+error<- mean(knn_type !=test$Type)
+View(error)  #### 0.261
+
+##confusion matrix ##
+
+confusionMatrix(fact,test$Type)   ### Accuracy: 0.73, 95% CI: (0.6146,0.8397), P-value: 3.019e-10, kappa: 0.6485
+
+##Statistics by Class:
+
+                      Class: 1 Class: 2 Class: 3 Class: 5 Class: 6 Class: 7
+Sensitivity            0.8095   0.7391  0.40000  0.75000  1.00000  0.66667
+Specificity            0.8409   0.9286  0.91667  0.98361  0.98387  1.00000
+
+knn_type< NULL
+error.rate< NULL
+for (i in 1:10) {
+  knn_type<- knn(train[1:9],test[1:9],train$Type, k=i)
+  error[i]<- mean(knn_type!=test$Type)
+}
+knn.error<- as.data.frame(cbind(k = 1:10, error.type = error))
+
+ggplot(knn.error,aes(k,error.type))+ 
+  geom_point()+ 
+  geom_line() + 
+  scale_x_continuous(breaks=1:10)+ 
+  theme_bw() +
+  xlab("Value of K") +
+  ylab('Error')    ####### K-value = 4 
+
+Building model with K-value = 4
+
+knn_type1 <- knn(train[1:9],test[1:9],train$Type,k=3)
+#Error in prediction
+error <- mean(knn_type1!=test$Type)
+#Confusion Matrix
+confusionMatrix(knn_type1,test$Type)  ### Accuracy = 0.72 
+
+### we will choose "Knn_type" model over "knn_type1" as we are getting the higher accuracy in "knn_model". 
