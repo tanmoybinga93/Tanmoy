@@ -1,0 +1,134 @@
+install.packages("tm")
+library(tm)
+library(caret)
+library(e1071)
+library(RColorBrewer)
+library(ggplot2)
+library(wordcloud)
+library(SnowballC)
+
+#### importing data set and observation####
+
+sms_raw<- read.csv(file.choose())
+
+View(sms_raw)
+
+str(sms_raw)
+
+class(sms_raw)
+
+head(sms_raw)
+ 
+#### data exploration#### 
+
+#### select and rename appropiate column of the data set ####
+
+sms_raw<- sms_raw[,1:2]
+
+colnames(sms_raw)<- c("Tag","Msg")
+
+View(sms_raw)
+
+str(sms_raw)
+
+### find the junk and legit sms data proportion ###
+
+table(sms_raw$Tag)                                    ###### ham spam 
+                                                             4812  747 
+
+prop.table(table(sms_raw$Tag))                        ###### ham      spam 
+                                                          0.8656233 0.1343767 
+#### Data visualization#### 
+                                                          
+spam<- subset(sms_raw, Tag=="spam")                                                          
+
+wordcloud(spam$Msg, max.words = 60, colors = brewer.pal(7, "Paired"), random.order = FALSE)   #### "Gurranted","nokia","call","free","mobile","prize","won","service"...etc####
+
+ham<- subset(sms_raw,Tag =="ham")
+
+wordcloud(ham$Msg, max.words = 60, colors = brewer.pal(7, "Paired"), random.order = FALSE)    ### "now","love","get","sorry","good","hope","dont","like","need","still"...etc####
+
+#### Data processing, cleaning & creating a DTM ####
+
+sms_corpus<- VCorpus(VectorSource(sms_raw$Msg))
+
+sms_dtm<- DocumentTermMatrix(sms_corpus, control = list(tolower = TRUE, removeNumbers = TRUE, stopwords = TRUE, removePunctuation = TRUE, stemming = TRUE ))
+
+dim(sms_dtm)     ######  5559 6971
+
+View(sms_dtm)
+
+#### creating training and testing data ####
+
+sms_dtm_train<- sms_dtm[1:4500,]
+
+sms_dtm_test<- sms_dtm[4501:5559,]
+
+sms_train_labels<- sms_raw[1:4500,]$Tag
+
+sms_test_labels<- sms_raw[4501:5559,]$Tag
+
+##### proportion for training and test labels ##### 
+
+prop.table(table(sms_test_labels))                        ######  ham      spam 
+                                                               0.8630784 0.1369216 
+
+prop.table(table(sms_train_labels))                       #####  ham      spam 
+                                                              0.8662222 0.1337778                             
+#### creating indicator features  ####  
+ 
+threshold <- 0.1
+
+min_freq = round(sms_dtm$nrow*(threshold/100),0)
+                                                              
+min_freq
+
+###### creating vector of most frequent term ##### 
+
+freq_words<- findFreqTerms(x = sms_dtm, lowfreq = min_freq)
+
+str(freq_words)
+ 
+##### filtering the DTM ###### 
+
+sms_dtm_train_freq<- sms_dtm_train[,freq_words]
+
+sms_dtm_test_freq<- sms_dtm_test[,freq_words]
+
+dim(sms_dtm_train_freq)     #### 4500 1255 
+dim(sms_dtm_test_freq)      #### 1059 1255
+
+########Since Naive Bayes trains on categorical data, the numerical data is converted to categorical data. We will convert the numeric features by creating a function that converts any non-zero positive value to “Yes” and all zero values to “No” to state whether a specific term is present in the document#########
+
+convert_values <- function(x) {
+  x <- ifelse(x > 0, "Yes", "No")
+}
+
+sms_train <- apply(sms_dtm_train_freq, MARGIN = 2,
+                   convert_values)
+
+sms_test <- apply(sms_dtm_test_freq, MARGIN = 2,
+                  convert_values)
+
+##### creating Naive Bayes model ##### 
+
+sms_class<- naiveBayes(sms_train,sms_train_labels)
+
+sms_class
+
+##### make prediction on test data ##### 
+
+sms_test_pred<- predict(sms_class,sms_test)
+
+mean(sms_test_pred,sms_test)
+
+### confusion matrix##### 
+
+#Create confusion matrix 
+
+sms_test_pred_fact<- as.factor(sms_test_pred)
+
+sms_test_labels_factor<- as.factor(sms_test_labels)
+
+confusionMatrix(data = sms_test_pred_fact, reference = sms_test_labels_factor,
+                positive = "spam", dnn = c("Prediction", "Actual"))               ##### 97.12 % accuracy  kappa = 0.91 
