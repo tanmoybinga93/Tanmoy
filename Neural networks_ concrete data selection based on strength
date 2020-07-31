@@ -1,0 +1,156 @@
+library(neuralnet)
+library(nnet)
+library(plyr)
+library(dplyr)
+library(caret)
+library(ggplot2)
+install.packages("NeuralNetTools")
+library(NeuralNetTools)
+
+### importing dataset####
+
+concrete<- read.csv(file.choose())
+
+View(concrete)
+
+str(concrete) 
+
+attach(concrete)
+
+summary(concrete)
+
+head(concrete)
+
+tail(concrete)
+
+### EDA, feature selection based on visualization and co-relation ### 
+
+plot(concrete)
+
+boxplot(cement,strength)
+
+boxplot(slag,strength)
+
+boxplot(ash,strength)
+
+boxplot(water,strength)
+
+boxplot(superplastic,strength)
+
+boxplot(coarseagg,strength)
+
+boxplot(fineagg,strength)
+
+boxplot(age,strength)
+
+hist(concrete$cement,prob = T, breaks = 30)
+lines(density(concrete$cement))
+
+hist(concrete$cement,prob = T, breaks = 30)
+lines(density(concrete$cement))
+
+hist(concrete$slag,prob = T, breaks = 30)
+lines(density(concrete$slag))
+
+hist(concrete$ash,prob = T, breaks = 30)
+lines(density(concrete$ash))
+
+hist(concrete$water,prob = T, breaks = 30)
+lines(density(concrete$water))
+
+hist(concrete$superplastic,prob = T, breaks = 30)
+lines(density(concrete$superplastic))
+
+hist(concrete$coarseagg,prob = T, breaks = 30)
+lines(density(concrete$coarseagg))
+
+hist(concrete$fineagg,prob = T, breaks = 30)
+lines(density(concrete$fineagg))
+
+hist(concrete$age,prob = T, breaks = 30)
+lines(density(concrete$age))
+
+#### normalizing the data #### 
+
+normalize<- function(x){
+  return((x-min(x))/(max(x)-min(x)))
+}
+concrete_normalization<- as.data.frame(lapply(concrete,normalize))
+
+summary(concrete_normalization$strength)
+
+###   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+      0.0000  0.2664  0.4001  0.4172  0.5457  1.0000 
+
+summary(concrete$strength)
+
+####  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+      2.33   23.71   34.45   35.82   46.13   82.60 
+
+##### splitting the data into train and test #### 
+      
+concrete_train<- concrete_normalization[1:800,]      
+
+concrete_test<- concrete_normalization[801:1030,]      
+
+### applying neuralnet into training data ### 
+
+set.seed(12345)
+
+concrete_model<- neuralnet(strength~ strength ~ cement + slag +
+                             ash + water + superplastic + 
+                             coarseagg + fineagg + age,
+                             data = concrete_train)
+
+plot(concrete_model)  ##### error: 5.21, steps: 271
+
+##### evaluating model performance ##### 
+
+model_result<- neuralnet::compute(concrete_model,concrete_test[1:8])
+
+predicted_strength<- model_result$net.result
+
+cor(predicted_strength,concrete_test$strength)
+
+##################
+[,1]
+[1,] 0.8011963
+##################
+
+head(predicted_strength)
+
+######### returning back to the original value, i.e.,denormalizing ######## 
+
+strength_min <- min(concrete$strength)
+
+strength_max <- max(concrete$strength)
+
+denormalize <- function(x, min, max) { 
+  return( (max - min)*x + min )
+}
+
+strength_prediction<- denormalize(predicted_strength,strength_min,strength_max)
+
+head(strength_prediction,n = 10)
+
+#######  improving model performance   ######## 
+
+set.seed(12345)
+
+concrete_model2<- neuralnet(strength ~ cement + slag +
+                              ash + water + superplastic + 
+                              coarseagg + fineagg + age,
+                            data = concrete_train, hidden = 5, 
+                            act.fct = "logistic")
+
+plot(concrete_model2)
+###########################  error 1.80, steps: 38348   ######################## 
+
+model_result2<- neuralnet::compute(concrete_model2,concrete_test[1:8])
+
+predicted_strength1<- model_result2$net.result
+
+######   The correlation of predicted vs. actual values of the concrete strength is 0.92. 12% more correlated compared to the previous model which was 0.80% ############## 
+
+
+cor(predicted_strength1,concrete_test$strength)
