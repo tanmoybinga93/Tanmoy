@@ -1,0 +1,384 @@
+library(readxl)
+library(readr)
+install.packages("forecast")
+library(forecast)
+install.packages("rmarkdown")
+library(rmarkdown)
+install.packages("smooth")
+library(smooth)
+install.packages("fpp")
+library(fpp)
+
+###### Importing cocacola data ####### 
+
+cocacola<- read_excel(file.choose())
+
+View(cocacola)
+
+str(cocacola) 
+
+attach(cocacola)
+
+###################### Exploratory data analysis and visualization ############################
+
+summary(cocacola)
+
+head(cocacola)
+
+tail(cocacola)
+
+plot(cocacola$Sales)
+
+plot(cocacola$Sales,type = "o")
+
+boxplot(cocacola$Sales)
+
+hist(cocacola$Sales)
+
+cocacola1<- ts(cocacola,start = c(1986,1),end = c(1995,6),frequency = 4)
+
+start(cocacola1)
+
+end(cocacola1)
+
+sum(is.na(cocacola1))
+
+summary(cocacola1)
+
+View(cocacola1)
+
+decomp_data<- decompose(cocacola1,"multiplicative")
+
+plot(decomp_data)
+
+plot(decomp_data$seasonal)
+
+plot(decomp_data$trend)
+
+plot(decomp_data$random)
+
+cycle(cocacola1)
+
+boxplot(cocacola1~cycle(cocacola1,xlab = "Date",ylab = "Passenger Number(100's)",main = "Monthly Boxplot of passengers from 1995 to 2002"))
+
+Q1 <-  ifelse(grepl("Q1",cocacola$Quarter),'1','0')
+
+Q2 <-  ifelse(grepl("Q2",cocacola$Quarter),'1','0')
+
+Q3 <-  ifelse(grepl("Q3",cocacola$Quarter),'1','0')
+
+Q4 <-  ifelse(grepl("Q4",cocacola$Quarter),'1','0')
+
+cocacola_data<- cbind(cocacola,Q1,Q2,Q3,Q4)
+
+colnames(cocacola_data)
+
+cocacola_data["t"]<- 1:42 
+
+cocacola_data["log_sales"]<- log(cocacola_data["Sales"]) 
+
+cocacola_data["t_square"]<- cocacola_data["t"]*cocacola_data["t"]
+
+View(cocacola_data)
+
+attach(cocacola_data)
+
+################## partition of the data #################### 
+
+train<- cocacola_data[1:36,]
+
+test<- cocacola_data[37:40,]
+ 
+######## Linear Model ############### 
+
+linear_model<- lm(Sales~t, data = train)
+
+summary(linear_model)
+
+### Residuals:
+Residuals:
+  Min      1Q  Median      3Q     Max 
+-485.47 -287.86  -17.94  163.36  803.06 
+
+Coefficients:
+  Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 1537.244    118.024   13.03 9.01e-15 ***
+  t             64.500      5.563   11.60 2.31e-13 ***
+  ---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 346.7 on 34 degrees of freedom
+Multiple R-squared:  0.7982,	Adjusted R-squared:  0.7922 
+F-statistic: 134.4 on 1 and 34 DF,  p-value: 2.313e-13
+
+  ################## 
+
+linear_pred<- data.frame(predict(linear_model,interval = "predict",newdata = test))
+ 
+View(linear_pred)
+
+rmse_linear<- sqrt(mean((test$Sales-linear_pred$fit)^2,na.rm = T))
+
+rmse_linear 
+
+############ 644.0188 ##########
+
+#################### applying exponential model ################# 
+
+expo_model<- lm(Sales~t, data = test)
+
+summary(expo_model)
+
+#### 
+Residuals:
+  37     38     39     40 
+-441.1  501.3  320.7 -380.9 
+
+Coefficients:
+  Estimate Std. Error t value Pr(>|t|)
+(Intercept)   -870.1    10145.2  -0.086    0.939
+t              139.6      263.4   0.530    0.649
+
+Residual standard error: 589 on 2 degrees of freedom
+Multiple R-squared:  0.1231,	Adjusted R-squared:  -0.3153 
+F-statistic: 0.2809 on 1 and 2 DF,  p-value: 0.6491       ##########  
+
+expo_model_pred<- data.frame(predict(expo_model,interval = "predict",newdata = test))
+
+rmse_expo<- sqrt(mean((test$Sales-expo_model_pred$fit)^2,na.rm = T))
+
+rmse_expo
+###########416.4745 ########### 
+
+Quad_model<-lm(Sales~t+t_square, data = train)
+
+summary(Quad_model)
+
+#### 
+Residuals:
+  Min      1Q  Median      3Q     Max 
+-523.55 -220.14  -35.64  253.51  531.75 
+
+Coefficients:
+  Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 2017.6741   150.8093  13.379    7e-15 ***
+  t            -11.3573    18.7949  -0.604 0.549795    
+t_square       2.0502     0.4927   4.161 0.000213 ***
+  ---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 285 on 33 degrees of freedom
+Multiple R-squared:  0.8676,	Adjusted R-squared:  0.8596 
+F-statistic: 108.1 on 2 and 33 DF,  p-value: 3.238e-15
+
+
+Quad_pred<-data.frame(predict(Quad_model,interval='predict',newdata=test))
+
+rmse_Quad<-sqrt(mean((test$Sales-Quad_pred$fit)^2,na.rm=T))
+
+rmse_Quad   ##### 434.7185
+
+sea_add_model<- lm(Sales~Q1 + Q2 + Q3 + Q4, data  = train)
+
+summary(sea_add_model) 
+
+### Residuals:
+Residuals:
+  Min     1Q Median     3Q    Max 
+-924.1 -624.8 -163.8  576.8 1522.6 
+
+Coefficients: (1 not defined because of singularities)
+Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   2712.9      249.3  10.884 2.74e-12 ***
+  Q11           -393.9      352.5  -1.117    0.272    
+Q21            238.6      352.5   0.677    0.503    
+Q31            225.5      352.5   0.640    0.527    
+Q41               NA         NA      NA       NA    
+---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 747.8 on 32 degrees of freedom
+Multiple R-squared:  0.1163,	Adjusted R-squared:  0.03346 
+F-statistic: 1.404 on 3 and 32 DF,  p-value: 0.2596
+
+############ 
+
+sea_add_pred<-data.frame(predict(sea_add_model,newdata=test,interval='predict'))
+
+rmse_sea_add<-sqrt(mean((test$Sales-sea_add_pred$fit)^2,na.rm = T))
+
+rmse_sea_add    #### 1785.135
+
+
+###### Additive seasonality with linear model ####### 
+
+add_sea_linear_model<- lm(Sales~t + Q1 + Q2 + Q3 + Q4,data = train)
+
+summary(add_sea_linear_model)
+
+### Residuals:
+Residuals:
+  Min      1Q  Median      3Q     Max 
+-476.34 -157.05  -67.11   67.65  617.56 
+
+Coefficients: (1 not defined because of singularities)
+Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  1435.20     124.21  11.554 9.13e-13 ***
+  t              63.89       4.32  14.788 1.37e-15 ***
+  Q11          -202.21     126.86  -1.594  0.12110    
+Q21           366.40     126.50   2.897  0.00686 ** 
+  Q31           289.39     126.27   2.292  0.02887 *  
+  Q41               NA         NA      NA       NA    
+---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 267.7 on 31 degrees of freedom
+Multiple R-squared:  0.8903,	Adjusted R-squared:  0.8761 
+F-statistic: 62.89 on 4 and 31 DF,  p-value: 1.969e-14
+
+###### 
+
+add_sea_linear_model_pred<- data.frame(predict(add_sea_linear_model,interval = "predict",newdata = test))
+
+rmse_add_sea_linear<-sqrt(mean((test$Sales-add_sea_linear_model_pred$fit)^2,na.rm=T)) 
+
+rmse_add_sea_linear   ##### 534.6979
+
+###### additive seasonality with quadratic####### 
+
+Add_sea_Quad_model<-lm(Sales~t+t_square+Q1+Q2+Q3+Q4,data=train)
+
+summary(Add_sea_Quad_model) 
+
+#### Residuals:
+Min      1Q  Median      3Q     Max 
+-280.05 -134.63   28.75   93.79  341.09 
+
+Coefficients: (1 not defined because of singularities)
+Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 1919.0149    99.3368  19.318  < 2e-16 ***
+  t            -12.8328    10.6588  -1.204 0.238019    
+t_square       2.0735     0.2793   7.423 2.85e-08 ***
+  Q11         -202.2097    76.5664  -2.641 0.012999 *  
+  Q21          370.5450    76.3462   4.853 3.52e-05 ***
+  Q31          293.5369    76.2125   3.852 0.000573 ***
+  Q41                NA         NA      NA       NA    
+---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 161.6 on 30 degrees of freedom
+Multiple R-squared:  0.9613,	Adjusted R-squared:  0.9549 
+F-statistic: 149.1 on 5 and 30 DF,  p-value: < 2.2e-16
+
+Add_sea_Quad_pred<-data.frame(predict(Add_sea_Quad_model,interval='predict',newdata=test))
+
+rmse_Add_sea_Quad<-sqrt(mean((test$Sales-Add_sea_Quad_pred$fit)^2,na.rm=T))
+
+rmse_Add_sea_Quad   ##### 236.7075 ##### 
+
+
+##### multiplicative seasonality ###### 
+
+multi_sea_model<- lm(log_sales~Q1+Q2+Q3+Q4,data = train)
+summary(multi_sea_model)
+
+### Residuals:
+Min       1Q   Median       3Q      Max 
+-0.37206 -0.21908 -0.03649  0.21230  0.45120 
+
+Coefficients: (1 not defined because of singularities)
+Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  7.87651    0.08845  89.052   <2e-16 ***
+  Q11         -0.15985    0.12509  -1.278    0.210    
+Q21          0.08161    0.12509   0.652    0.519    
+Q31          0.07542    0.12509   0.603    0.551    
+Q41               NA         NA      NA       NA    
+---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.2653 on 32 degrees of freedom
+Multiple R-squared:  0.1315,	Adjusted R-squared:  0.05006 
+F-statistic: 1.615 on 3 and 32 DF,  p-value: 0.2053
+
+multi_sea_pred<-data.frame(predict(multi_sea_model,newdata=test,interval='predict'))
+
+rmse_multi_sea<-sqrt(mean((test$Sales-exp(multi_sea_pred$fit))^2,na.rm = T))
+
+rmse_multi_sea   #### 1871.203 ##### 
+
+###### multiplicative seasonality with linear model ###### 
+
+multi_add_sea_model<-lm(log_sales~t+Q1+Q2+Q3+Q4,data = train)
+
+summary(multi_add_sea_model) 
+
+### 
+Residuals:
+  Min        1Q    Median        3Q       Max 
+-0.161001 -0.043058 -0.003783  0.033233  0.252528 
+
+Coefficients: (1 not defined because of singularities)
+Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  7.417783   0.040219 184.434  < 2e-16 ***
+  t            0.022936   0.001399  16.397  < 2e-16 ***
+  Q11         -0.091041   0.041078  -2.216  0.03414 *  
+  Q21          0.127486   0.040958   3.113  0.00397 ** 
+  Q31          0.098357   0.040887   2.406  0.02230 *  
+  Q41                NA         NA      NA       NA    
+---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.08668 on 31 degrees of freedom
+Multiple R-squared:  0.9102,	Adjusted R-squared:  0.8986 
+F-statistic: 78.56 on 4 and 31 DF,  p-value: 9.001e-16
+
+#### 
+
+multi_add_sea_pred<-data.frame(predict(multi_add_sea_model,newdata=test,interval='predict'))
+
+rmse_multi_add_sea<-sqrt(mean((test$Sales-exp(multi_add_sea_pred$fit))^2,na.rm = T)) 
+
+rmse_multi_add_sea ##### 335.1026 
+
+##################### preparing tables on models and its RMSE values ####################### 
+
+table_rmse<-data.frame(c("rmse_linear","rmse_expo","rmse_Quad","rmse_sea_add","rmse_Add_sea_Quad","rmse_multi_sea","rmse_multi_add_sea"),c(rmse_linear,rmse_expo,rmse_Quad,rmse_sea_add,rmse_Add_sea_Quad,rmse_multi_sea,rmse_multi_add_sea))
+View(table_rmse)
+
+
+#### rmse_linear	644.0188
+2	rmse_expo	416.4745
+3	rmse_Quad	434.7185
+4	rmse_sea_add	1785.1351
+5	rmse_Add_sea_Quad	236.7075
+6	rmse_multi_sea	1871.2028
+7	rmse_multi_add_sea	335.1026 ############ additive seasonality with quadratic has least least trend and has least RMSE value###### 
+
+new_model<-lm(Sales~t+t_square+Q1+Q2+Q3+Q4,data=cocacola_data)
+
+new_model_pred<-data.frame(predict(new_model,newdata=cocacola_data,interval='predict'))
+
+new_model_final<- new_model$fitted.values
+
+View(new_model_final)
+
+pred_res<- predict(arima(log_sales,order=c(1,0,0)),n.ahead = 12)
+
+pred_res
+
+
+quarter_data<- as.data.frame(cocacola_data$Quarter)
+
+final <- as.data.frame(cbind(Quarter,cocacola_data$Sales,new_model_final))
+
+colnames(final) <-c("Quarter","Sales","New_Pred_Value")
+
+
+plot(final$Sales,main = "ActualGraph", xlab="Sales(Actual)", ylab="Quarter",    ###### actual plot #####
+     col.axis="green",type="o") 
+
+plot(final$New_Pred_Value, main = "PredictedGraph", xlab="Sales(Predicted)", ylab="Quarter",    ###### predicted plot ###### 
+     col.axis="blue",type="s")
+
+View(final)
+
