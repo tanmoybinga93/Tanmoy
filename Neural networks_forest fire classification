@@ -1,0 +1,255 @@
+library(neuralnet)
+library(nnet)
+library(plyr)
+library(dplyr)
+library(caret)
+library(ggplot2)
+library(NeuralNetTools)
+library(corrplot)
+library(corpcor)
+library(car)
+library(MASS)
+library(GGally)
+install.packages("Hmisc")
+library(Hmisc)
+library(plotly)
+ ####################### importing data set, pre-processing of dTata and cleaning the data  ########################## 
+
+forest<- read.csv(file.choose())
+
+View(forest) 
+
+str(forest)
+
+head(forest)
+
+tail(forest)
+
+summary(forest)
+
+attach(forest)
+
+forest$size_category<- as.numeric(as.factor(forest$size_category))
+
+forest$month<- as.numeric(as.factor(forest$month))
+
+forest$day<- as.numeric(as.factor(forest$day))
+
+str(forest) 
+
+##### univariate and bi-variate analysis ##### 
+
+boxplot(forest)
+
+boxplot(forest$FFMC,forest$area)
+
+boxplot(forest$ISI,forest$area)
+
+boxplot(forest$temp,forest$area)
+
+boxplot(forest$wind,forest$area) 
+
+boxplot(forest$RH,forest$area)
+
+boxplot(forest$rain,forest$area)
+
+
+
+boxplot(forest$DMC)
+
+boxplot(forest$DC)
+
+boxplot(forest$ISI)
+
+boxplot(forest$temp)
+
+boxplot(forest$RH)
+
+boxplot(forest$wind)
+
+boxplot(forest$rain)
+
+boxplot(forest$area)
+
+cor.test(forest$FFMC,forest$area)
+
+cor.test(forest$month,forest$area)
+
+cor.test(forest$day,forest$area)
+
+cor.test(forest$DMC, forest$area)
+
+cor.test(forest$DC,forest$area)
+
+cor.test(forest$ISI,forest$area)
+
+cor.test(forest$temp,forest$area)
+
+cor.test(forest$RH,forest$area)
+
+cor.test(forest$wind,forest$area)
+
+cor.test(forest$rain,forest$area)
+
+##############################################  Feature engineering & visualisation ################################
+ggcorr(forest) 
+
+ggcorr(forest, label = TRUE, label_alpha = TRUE)
+
+rcorr(forest$temp,forest$area)
+rcorr(forest$wind,forest$area)
+rcorr(forest$rain,forest$area)
+rcorr(forest$RH,forest$area)
+rcorr(forest$area,forest$area) 
+
+qplot(forest$temp, 
+      forest$area, 
+      data = forest, 
+      geom = c("point", "smooth"), 
+      method = "lm", 
+      alpha = I(1 / 5), 
+      se = FALSE) 
+
+qplot(forest$ISI, 
+      forest$area, 
+      data = forest, 
+      geom = c("point", "smooth"), 
+      method = "lm", 
+      alpha = I(1 / 5), 
+      se = FALSE)
+
+qplot(forest$wind, 
+      forest$area, 
+      data = forest, 
+      geom = c("point", "smooth"), 
+      method = "lm", 
+      alpha = I(1 / 5), 
+      se = FALSE)
+
+qplot(forest$RH, 
+      forest$area, 
+      data = forest, 
+      geom = c("point", "smooth"), 
+      method = "lm", 
+      alpha = I(1 / 5), 
+      se = FALSE)
+
+qplot(forest$rain, 
+      forest$area, 
+      data = forest, 
+      geom = c("point", "smooth"), 
+      method = "lm", 
+      alpha = I(1 / 5), 
+      se = FALSE) 
+
+
+
+ggpairs(forest, 
+        columns = c("temp", "wind", "RH","ISI","rain"), 
+        upper = list(continuous = wrap("cor", 
+                                       size = 10)), 
+        lower = list(continuous = "smooth"))
+
+hist(forest$DMC)
+hist(forest$ISI)
+hist(forest$temp)
+hist(forest$wind)
+hist(forest$rain)
+hist(forest$RH)
+
+hist(forest$temp,prob = T, breaks = 30)
+lines(density(forest$temp))
+
+hist(forest$wind,prob = T, breaks = 30)
+lines(density(forest$wind))
+
+hist(forest$rain,prob = T, breaks = 30)
+lines(density(forest$rain))
+
+hist(forest$RH,prob = T, breaks = 30)
+lines(density(forest$RH))
+
+hist(forest$ISI,prob = T, breaks = 30)
+lines(density(forest$ISI)) 
+
+########################### after doing all the plots and feature engineering technique we can clearly understand that onle temp, ISI, RH wind and rain is closely related with size_category with the data ############################################
+
+##### normalizing the data ##### 
+
+normalize<- function(x){
+  return((x-min(x))/max(x)-min(x))
+}
+forest_normalization<- as.data.frame(lapply(forest,normalize))
+
+summary(forest_normalization$area)
+
+summary(forest$area)
+ 
+##### splitting the data into train and test ###### 
+
+forest_train<- forest_normalization[1:400,]
+
+forest_test<- forest_normalization[401:517,]
+
+################# applying neuralnet into training data ########################### 
+
+set.seed(12345)
+
+forest_model<- neuralnet(area~ temp + wind + RH + rain + ISI, data = forest_train)
+
+plot(forest_model)    ######  steps: 36, error: 0.59  ###### 
+
+forest_model1<- neuralnet(area~ temp + wind + RH + rain , data = forest_train)
+
+plot(forest_model1)  #######  steps: 28, error: 0.59 ######
+
+forest_model1
+
+####### evaluating model performance ###### 
+
+model_result<- neuralnet::compute(forest_model1,forest_test[7:11])
+
+predicted_size<- model_result$net.result
+
+cor(predicted_size,forest_test$area)
+
+
+
+model_result1<- neuralnet::compute(forest_model1,forest_test[7:10])
+
+predicted_size1<- model_result1$net.result
+
+cor(predicted_size1,forest_test$area)       
+
+head(predicted_size1)
+
+###### denormalizing the values ###### 
+
+size_min<-min(forest$area)
+
+size_max <- max(forest$area)
+
+denormalize <- function(x, min, max) { 
+  return( (max - min)*x + min )
+}
+
+size_prediction<- denormalize(predicted_size1,size_min,size_max)
+
+head(size_prediction,n = 10)
+
+################### improving model accuracy ######################### 
+
+set.seed(12345) 
+
+forest_model2<- neuralnet(area~ temp + RH + wind + rain , data = forest_train,hidden =10,act.fct = "logistic")
+forest_model2 
+
+plot(forest_model2)
+
+model_result2<- neuralnet::compute(forest_model2,forest_test[7:10])
+
+predicted_size2<- model_result2$net.result
+
+cor(predicted_size2,forest_test$area)
+
+
