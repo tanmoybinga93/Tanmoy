@@ -1,0 +1,105 @@
+str(Airlines_Data)
+attach(Airlines_Data)
+mean(Passengers)
+
+library(forecast)
+library(fpp)
+library(smooth)
+
+windows()
+plot(Passengers, type='o')
+dummy <- data.frame(outer(rep(month.abb, length=96), month.abb, "==")+ 0)   #creating dummies
+View(dummy)
+colnames(dummy)<- month.abb
+View(dummy)              #assigning month names
+
+Airlines_Data <- cbind(Airlines_Data, dummy)
+View(Airlines_Data)
+Airlines_Data["t"]<-1:96
+View(Airlines_Data)
+Airlines_Data["log_passengers"] <- log(Airlines_Data["Passengers"])
+Airlines_Data["t_square"]<- Airlines_Data["t"]*Airlines_Data["t"]
+
+train <- Airlines_Data[1:84,]  
+test <- Airlines_Data[85:96,]
+
+linear_model <- lm(Passengers~t, data = train)       ##linear model
+summary(linear_model)
+
+linear_pred <- data.frame(predict(linear_model, interval = "predict", newdata=test))
+View(linear_pred)
+
+rmse_linear <- sqrt(mean((test$Passengers-linear_pred$fit)^2, na.rm = T))
+rmse_linear              ##53.19924
+
+
+expo_model <- lm(log_passengers~t, data=train)    ##exponential model
+summary(expo_model)
+
+expo_pred <- data.frame(predict(expo_model, interval = "predict", newdata = test))
+View(expo_pred)
+
+rmse_expo <- sqrt(mean((test$Passengers-exp(expo_pred$fit))^2, na.rm = T))
+rmse_expo           ##46.05736
+
+Quad_model <- lm(Passengers~t+t_square, data = train)   ##Quadratic model
+summary(Quad_model)
+
+Quad_pred <- data.frame(predict(Quad_model, interval = "predict", newdata = test))
+rmse_quad <- sqrt(mean((test$Passengers-Quad_pred$fit)^2, na.rm = T))
+rmse_quad         ##48.05189
+
+sea_add_model<-lm(Passengers~Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov,data=train)   ##Additive Seasonality
+summary(sea_add_model)
+sea_add_pred <- data.frame(predict(sea_add_model, interval = 'predict', newdata = test))
+rmse_sea_add <- sqrt(mean((test$Passengers-sea_add_pred$fit)^2, na.rm = T))
+rmse_sea_add              ##132.8198
+
+Add_sea_Linear_model<-lm(Passengers~t+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov,data=train)   ###Additive Seasonality with Linear
+summary(Add_sea_Linear_model)
+
+Add_sea_Linear_pred<-data.frame(predict(Add_sea_Linear_model,interval='predict',newdata=test))
+rmse_Add_sea_Linear<-sqrt(mean((test$Passengers-Add_sea_Linear_pred$fit)^2,na.rm=T))
+rmse_Add_sea_Linear       ##35.34896
+
+Add_sea_Quad_model<-lm(Passengers~t+t_square+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov,data=train)   ###Additive Seasonality with Quadratic
+summary(Add_sea_Quad_model)
+
+Add_sea_Quad_pred<-data.frame(predict(Add_sea_Quad_model,interval='predict',newdata=test))
+rmse_Add_sea_Quad<-sqrt(mean((test$Passengers-Add_sea_Quad_pred$fit)^2,na.rm=T))
+rmse_Add_sea_Quad      ##26.36082
+
+multi_sea_model<-lm(log_passengers~Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov,data = train)   ##Multiplicative Seasonality
+summary(multi_sea_model)
+
+multi_sea_pred<-data.frame(predict(multi_sea_model,newdata=test,interval='predict'))
+rmse_multi_sea<-sqrt(mean((test$Passengers-exp(multi_sea_pred$fit))^2,na.rm = T))
+rmse_multi_sea    ##140.0632
+
+
+multi_add_sea_model<-lm(log_passengers~t+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov,data = train)   ##Multiplicative Seasonality Linear trend
+summary(multi_add_sea_model) 
+
+multi_add_sea_pred<-data.frame(predict(multi_add_sea_model,newdata=test,interval='predict'))  ##Multiplicative Seasonality Linear trend
+rmse_multi_add_sea<-sqrt(mean((test$Passengers-exp(multi_add_sea_pred$fit))^2,na.rm = T))
+rmse_multi_add_sea     ##10.51917
+
+table_rmse<-data.frame(c("rmse_linear","rmse_expo","rmse_quad","rmse_sea_add","rmse_Add_sea_Quad","rmse_multi_sea","rmse_multi_add_sea"),c(rmse_linear,rmse_expo,rmse_quad,rmse_sea_add,rmse_Add_sea_Quad,rmse_multi_sea,rmse_multi_add_sea))
+View(table_rmse)
+colnames(table_rmse)<-c("model","RMSE")
+
+new_model<-lm(log_passengers~t+Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov,data = Airlines_Data)
+new_model_pred<-data.frame(predict(new_model,newdata=Airlines_Data,interval='predict'))
+new_model_fin <- exp(new_model$fitted.values)
+View(new_model_fin)
+
+plot(diff(log_passengers))
+acf(diff(log_passengers)) #q 1
+pacf (diff(log_passengers))#p 0
+
+pred_res<- predict(arima(log_passengers,order=c(0,1,1)),n.ahead = 12)
+Month <- as.data.frame(Airlines_Data$Month)
+Final <- as.data.frame(cbind(Month,Airlines_Data$Passengers,new_model_fin))
+colnames(Final) <-c("Month","Passengers","New_Pred_Value")
+Final <- as.data.frame(Final)
+View(Final)
