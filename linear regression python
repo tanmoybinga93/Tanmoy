@@ -1,0 +1,472 @@
+import pandas as pd
+import numpy as np 
+import matplotlib.pyplot as plt
+salary= pd.read_csv('Salary_Data.csv')
+str(salary)
+'    YearsExperience    Salary\n0               1.1   39343.0\n1               1.3   46205.0\n2               1.5   37731.0\n3               2.0   43525.0\n4               2.2   39891.0\n5               2.9   56642.0\n6               3.0   60150.0\n7               3.2   54445.0\n8               3.2   64445.0\n9               3.7   57189.0\n10              3.9   63218.0\n11              4.0   55794.0\n12              4.0   56957.0\n13              4.1   57081.0\n14              4.5   61111.0\n15              4.9   67938.0\n16              5.1   66029.0\n17              5.3   83088.0\n18              5.9   81363.0\n19              6.0   93940.0\n20              6.8   91738.0\n21              7.1   98273.0\n22              7.9  101302.0\n23              8.2  113812.0\n24              8.7  109431.0\n25              9.0  105582.0\n26              9.5  116969.0\n27              9.6  112635.0\n28             10.3  122391.0\n29             10.5  121872.0'
+salary.columns
+Index(['YearsExperience', 'Salary'], dtype='object')
+salary.head()
+YearsExperience	Salary
+0	1.1	39343.0
+1	1.3	46205.0
+2	1.5	37731.0
+3	2.0	43525.0
+4	2.2	39891.0
+salary.tail()
+YearsExperience	Salary
+25	9.0	105582.0
+26	9.5	116969.0
+27	9.6	112635.0
+28	10.3	122391.0
+29	10.5	121872.0
+np.mean(salary)
+YearsExperience        5.313333
+Salary             76003.000000
+dtype: float64
+np.median(salary)
+18870.75
+plt.hist(salary)
+([array([1., 0., 0., 1., 0., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 1., 0., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 1., 0., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 1., 0., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 1., 0., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 0., 1., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 0., 1., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 1., 0., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 0., 1., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 0., 1., 0., 0., 0., 0.]),
+  array([1., 0., 0., 0., 0., 0., 1., 0., 0., 0.]),
+  array([1., 0., 0., 0., 0., 0., 1., 0., 0., 0.]),
+  array([1., 0., 0., 0., 0., 0., 0., 1., 0., 0.]),
+  array([1., 0., 0., 0., 0., 0., 0., 1., 0., 0.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 1., 0.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 1., 0.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 0., 1.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 1., 0.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 1., 0.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 0., 1.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 0., 1.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 0., 1.]),
+  array([1., 0., 0., 0., 0., 0., 0., 0., 0., 1.])],
+ array([1.1000000e+00, 1.2240090e+04, 2.4479080e+04, 3.6718070e+04,
+        4.8957060e+04, 6.1196050e+04, 7.3435040e+04, 8.5674030e+04,
+        9.7913020e+04, 1.1015201e+05, 1.2239100e+05]),
+ <a list of 30 Lists of Patches objects>)
+
+plt.boxplot(salary)
+{'whiskers': [<matplotlib.lines.Line2D at 0x2273afdef08>,
+  <matplotlib.lines.Line2D at 0x2273afe2f08>,
+  <matplotlib.lines.Line2D at 0x2273aff7788>,
+  <matplotlib.lines.Line2D at 0x2273affa748>,
+  <matplotlib.lines.Line2D at 0x2273b0117c8>,
+  <matplotlib.lines.Line2D at 0x2273b01a788>,
+  <matplotlib.lines.Line2D at 0x2273b02e988>,
+  <matplotlib.lines.Line2D at 0x2273b02e748>,
+  <matplotlib.lines.Line2D at 0x2273b048388>,
+  <matplotlib.lines.Line2D at 0x2273b03b5c8>,
+  <matplotlib.lines.Line2D at 0x2273b060cc8>,
+  <matplotlib.lines.Line2D at 0x2273b05d0c8>,
+  <matplotlib.lines.Line2D at 0x2273b07b488>,
+  <matplotlib.lines.Line2D at 0x2273b073ac8>,
+  <matplotlib.lines.Line2D at 0x2273b091dc8>,
+  <matplotlib.lines.Line2D at 0x2273b08e308>,
+  <matplotlib.lines.Line2D at 0x2273b048d48>,
+  <matplotlib.lines.Line2D at 0x2273b0aee88>,
+  <matplotlib.lines.Line2D at 0x2273b0c6588>,
+  <matplotlib.lines.Line2D at 0x2273b0bed48>,
+  <matplotlib.lines.Line2D at 0x2273b0ded88>,
+  <matplotlib.lines.Line2D at 0x2273b0da2c8>,
+  <matplotlib.lines.Line2D at 0x2273b0f8288>,
+  <matplotlib.lines.Line2D at 0x2273b0f0a48>,
+  <matplotlib.lines.Line2D at 0x2273b111ac8>,
+  <matplotlib.lines.Line2D at 0x2273b10c0c8>,
+  <matplotlib.lines.Line2D at 0x2273b23c048>,
+  <matplotlib.lines.Line2D at 0x2273b234748>,
+  <matplotlib.lines.Line2D at 0x2273b253848>,
+  <matplotlib.lines.Line2D at 0x2273b24be08>,
+  <matplotlib.lines.Line2D at 0x2273b26f1c8>,
+  <matplotlib.lines.Line2D at 0x2273b2657c8>,
+  <matplotlib.lines.Line2D at 0x2273b286a48>,
+  <matplotlib.lines.Line2D at 0x2273b282048>,
+  <matplotlib.lines.Line2D at 0x2273b2a1108>,
+  <matplotlib.lines.Line2D at 0x2273b29a6c8>,
+  <matplotlib.lines.Line2D at 0x2273b2b96c8>,
+  <matplotlib.lines.Line2D at 0x2273b2b1d08>,
+  <matplotlib.lines.Line2D at 0x2273b2d0e08>,
+  <matplotlib.lines.Line2D at 0x2273b2cd488>,
+  <matplotlib.lines.Line2D at 0x2273b2eb608>,
+  <matplotlib.lines.Line2D at 0x2273b2e4c88>,
+  <matplotlib.lines.Line2D at 0x2273b304e08>,
+  <matplotlib.lines.Line2D at 0x2273b2ff388>,
+  <matplotlib.lines.Line2D at 0x2273b31afc8>,
+  <matplotlib.lines.Line2D at 0x2273b317888>,
+  <matplotlib.lines.Line2D at 0x2273b336c88>,
+  <matplotlib.lines.Line2D at 0x2273b32fec8>,
+  <matplotlib.lines.Line2D at 0x2273b352108>,
+  <matplotlib.lines.Line2D at 0x2273b34a908>,
+  <matplotlib.lines.Line2D at 0x2273b368c48>,
+  <matplotlib.lines.Line2D at 0x2273b364288>,
+  <matplotlib.lines.Line2D at 0x2273b384088>,
+  <matplotlib.lines.Line2D at 0x2273b37b888>,
+  <matplotlib.lines.Line2D at 0x2273b39cac8>,
+  <matplotlib.lines.Line2D at 0x2273b394ec8>,
+  <matplotlib.lines.Line2D at 0x2273b3b6088>,
+  <matplotlib.lines.Line2D at 0x2273b3b07c8>,
+  <matplotlib.lines.Line2D at 0x2273b3ced88>,
+  <matplotlib.lines.Line2D at 0x2273b3ca408>],
+ 'caps': [<matplotlib.lines.Line2D at 0x2273afe2a08>,
+  <matplotlib.lines.Line2D at 0x2273afe6ec8>,
+  <matplotlib.lines.Line2D at 0x2273afaa508>,
+  <matplotlib.lines.Line2D at 0x2273affe908>,
+  <matplotlib.lines.Line2D at 0x2273b01ab48>,
+  <matplotlib.lines.Line2D at 0x2273b0218c8>,
+  <matplotlib.lines.Line2D at 0x2273b031cc8>,
+  <matplotlib.lines.Line2D at 0x2273b035d08>,
+  <matplotlib.lines.Line2D at 0x2273b04c148>,
+  <matplotlib.lines.Line2D at 0x2273b01da48>,
+  <matplotlib.lines.Line2D at 0x2273b060f88>,
+  <matplotlib.lines.Line2D at 0x2273b063b48>,
+  <matplotlib.lines.Line2D at 0x2273b07b848>,
+  <matplotlib.lines.Line2D at 0x2273b07f448>,
+  <matplotlib.lines.Line2D at 0x2273b095e48>,
+  <matplotlib.lines.Line2D at 0x2273b09ad48>,
+  <matplotlib.lines.Line2D at 0x2273b0ae548>,
+  <matplotlib.lines.Line2D at 0x2273b0b3048>,
+  <matplotlib.lines.Line2D at 0x2273b0c97c8>,
+  <matplotlib.lines.Line2D at 0x2273b0cd6c8>,
+  <matplotlib.lines.Line2D at 0x2273b0e2f48>,
+  <matplotlib.lines.Line2D at 0x2273b0e5e08>,
+  <matplotlib.lines.Line2D at 0x2273b0fc248>,
+  <matplotlib.lines.Line2D at 0x2273b0f8708>,
+  <matplotlib.lines.Line2D at 0x2273b114d08>,
+  <matplotlib.lines.Line2D at 0x2273b118bc8>,
+  <matplotlib.lines.Line2D at 0x2273b23cf08>,
+  <matplotlib.lines.Line2D at 0x2273b23c408>,
+  <matplotlib.lines.Line2D at 0x2273b258a48>,
+  <matplotlib.lines.Line2D at 0x2273b25ba08>,
+  <matplotlib.lines.Line2D at 0x2273b272348>,
+  <matplotlib.lines.Line2D at 0x2273b272108>,
+  <matplotlib.lines.Line2D at 0x2273b28ac08>,
+  <matplotlib.lines.Line2D at 0x2273b28db08>,
+  <matplotlib.lines.Line2D at 0x2273b2a1408>,
+  <matplotlib.lines.Line2D at 0x2273b2a5048>,
+  <matplotlib.lines.Line2D at 0x2273b2bc908>,
+  <matplotlib.lines.Line2D at 0x2273b2c27c8>,
+  <matplotlib.lines.Line2D at 0x2273b2d4248>,
+  <matplotlib.lines.Line2D at 0x2273b2d4e48>,
+  <matplotlib.lines.Line2D at 0x2273b2f1808>,
+  <matplotlib.lines.Line2D at 0x2273b2f4848>,
+  <matplotlib.lines.Line2D at 0x2273b3070c8>,
+  <matplotlib.lines.Line2D at 0x2273b307b08>,
+  <matplotlib.lines.Line2D at 0x2273b323248>,
+  <matplotlib.lines.Line2D at 0x2273b3230c8>,
+  <matplotlib.lines.Line2D at 0x2273b336dc8>,
+  <matplotlib.lines.Line2D at 0x2273b33a8c8>,
+  <matplotlib.lines.Line2D at 0x2273b3540c8>,
+  <matplotlib.lines.Line2D at 0x2273b352608>,
+  <matplotlib.lines.Line2D at 0x2273b36cec8>,
+  <matplotlib.lines.Line2D at 0x2273b370d08>,
+  <matplotlib.lines.Line2D at 0x2273b388308>,
+  <matplotlib.lines.Line2D at 0x2273b38cf48>,
+  <matplotlib.lines.Line2D at 0x2273b39fc08>,
+  <matplotlib.lines.Line2D at 0x2273b3a3b88>,
+  <matplotlib.lines.Line2D at 0x2273b3ba448>,
+  <matplotlib.lines.Line2D at 0x2273b3ba148>,
+  <matplotlib.lines.Line2D at 0x2273b3d1b48>,
+  <matplotlib.lines.Line2D at 0x2273b3d5e08>],
+ 'boxes': [<matplotlib.lines.Line2D at 0x2273ae29d48>,
+  <matplotlib.lines.Line2D at 0x2273afee988>,
+  <matplotlib.lines.Line2D at 0x2273aff16c8>,
+  <matplotlib.lines.Line2D at 0x2273b00d708>,
+  <matplotlib.lines.Line2D at 0x2273b044f88>,
+  <matplotlib.lines.Line2D at 0x2273b044548>,
+  <matplotlib.lines.Line2D at 0x2273b05dc88>,
+  <matplotlib.lines.Line2D at 0x2273b077788>,
+  <matplotlib.lines.Line2D at 0x2273b0441c8>,
+  <matplotlib.lines.Line2D at 0x2273b05de48>,
+  <matplotlib.lines.Line2D at 0x2273b0c1748>,
+  <matplotlib.lines.Line2D at 0x2273b0daf48>,
+  <matplotlib.lines.Line2D at 0x2273b0f4688>,
+  <matplotlib.lines.Line2D at 0x2273b238148>,
+  <matplotlib.lines.Line2D at 0x2273b238308>,
+  <matplotlib.lines.Line2D at 0x2273b24f988>,
+  <matplotlib.lines.Line2D at 0x2273b26b588>,
+  <matplotlib.lines.Line2D at 0x2273b29e148>,
+  <matplotlib.lines.Line2D at 0x2273b29e288>,
+  <matplotlib.lines.Line2D at 0x2273b2b68c8>,
+  <matplotlib.lines.Line2D at 0x2273b2d0188>,
+  <matplotlib.lines.Line2D at 0x2273b2e78c8>,
+  <matplotlib.lines.Line2D at 0x2273b31a2c8>,
+  <matplotlib.lines.Line2D at 0x2273b31a488>,
+  <matplotlib.lines.Line2D at 0x2273b333bc8>,
+  <matplotlib.lines.Line2D at 0x2273b34e408>,
+  <matplotlib.lines.Line2D at 0x2273b380388>,
+  <matplotlib.lines.Line2D at 0x2273b3804c8>,
+  <matplotlib.lines.Line2D at 0x2273b3b3488>,
+  <matplotlib.lines.Line2D at 0x2273b3b35c8>],
+ 'medians': [<matplotlib.lines.Line2D at 0x2273afea888>,
+  <matplotlib.lines.Line2D at 0x2273b007848>,
+  <matplotlib.lines.Line2D at 0x2273b021b48>,
+  <matplotlib.lines.Line2D at 0x2273b039ac8>,
+  <matplotlib.lines.Line2D at 0x2273b050108>,
+  <matplotlib.lines.Line2D at 0x2273b06acc8>,
+  <matplotlib.lines.Line2D at 0x2273b086248>,
+  <matplotlib.lines.Line2D at 0x2273b09dc08>,
+  <matplotlib.lines.Line2D at 0x2273b0b6c48>,
+  <matplotlib.lines.Line2D at 0x2273b0cd2c8>,
+  <matplotlib.lines.Line2D at 0x2273b0e8cc8>,
+  <matplotlib.lines.Line2D at 0x2273b0ff1c8>,
+  <matplotlib.lines.Line2D at 0x2273b11d988>,
+  <matplotlib.lines.Line2D at 0x2273b240dc8>,
+  <matplotlib.lines.Line2D at 0x2273b25f848>,
+  <matplotlib.lines.Line2D at 0x2273b276dc8>,
+  <matplotlib.lines.Line2D at 0x2273b292a48>,
+  <matplotlib.lines.Line2D at 0x2273b2a9b48>,
+  <matplotlib.lines.Line2D at 0x2273b2c55c8>,
+  <matplotlib.lines.Line2D at 0x2273b2dce88>,
+  <matplotlib.lines.Line2D at 0x2273b2f7648>,
+  <matplotlib.lines.Line2D at 0x2273b30fc08>,
+  <matplotlib.lines.Line2D at 0x2273b327dc8>,
+  <matplotlib.lines.Line2D at 0x2273b3419c8>,
+  <matplotlib.lines.Line2D at 0x2273b359048>,
+  <matplotlib.lines.Line2D at 0x2273b374b88>,
+  <matplotlib.lines.Line2D at 0x2273b38cec8>,
+  <matplotlib.lines.Line2D at 0x2273b3a7888>,
+  <matplotlib.lines.Line2D at 0x2273b3c20c8>,
+  <matplotlib.lines.Line2D at 0x2273b3d9c48>],
+ 'fliers': [<matplotlib.lines.Line2D at 0x2273afee848>,
+  <matplotlib.lines.Line2D at 0x2273b009748>,
+  <matplotlib.lines.Line2D at 0x2273b026b48>,
+  <matplotlib.lines.Line2D at 0x2273b03b988>,
+  <matplotlib.lines.Line2D at 0x2273b058e08>,
+  <matplotlib.lines.Line2D at 0x2273b06eb88>,
+  <matplotlib.lines.Line2D at 0x2273b0816c8>,
+  <matplotlib.lines.Line2D at 0x2273b0a29c8>,
+  <matplotlib.lines.Line2D at 0x2273b0b61c8>,
+  <matplotlib.lines.Line2D at 0x2273b0d1288>,
+  <matplotlib.lines.Line2D at 0x2273b0edd08>,
+  <matplotlib.lines.Line2D at 0x2273b105048>,
+  <matplotlib.lines.Line2D at 0x2273b230808>,
+  <matplotlib.lines.Line2D at 0x2273b248f08>,
+  <matplotlib.lines.Line2D at 0x2273b263688>,
+  <matplotlib.lines.Line2D at 0x2273b276408>,
+  <matplotlib.lines.Line2D at 0x2273b296888>,
+  <matplotlib.lines.Line2D at 0x2273b2a9208>,
+  <matplotlib.lines.Line2D at 0x2273b2c5288>,
+  <matplotlib.lines.Line2D at 0x2273b2e0c88>,
+  <matplotlib.lines.Line2D at 0x2273b2f7248>,
+  <matplotlib.lines.Line2D at 0x2273b312b48>,
+  <matplotlib.lines.Line2D at 0x2273b327248>,
+  <matplotlib.lines.Line2D at 0x2273b3478c8>,
+  <matplotlib.lines.Line2D at 0x2273b35d108>,
+  <matplotlib.lines.Line2D at 0x2273b378948>,
+  <matplotlib.lines.Line2D at 0x2273b38c488>,
+  <matplotlib.lines.Line2D at 0x2273b3aa7c8>,
+  <matplotlib.lines.Line2D at 0x2273b3be448>,
+  <matplotlib.lines.Line2D at 0x2273b3dfb48>],
+ 'means': []}
+
+plt.hist(salary.Salary)
+(array([4., 2., 7., 4., 0., 2., 2., 2., 4., 3.]),
+ array([ 37731.,  46197.,  54663.,  63129.,  71595.,  80061.,  88527.,
+         96993., 105459., 113925., 122391.]),
+ <a list of 10 Patch objects>)
+
+plt.boxplot(salary.Salary)
+{'whiskers': [<matplotlib.lines.Line2D at 0x2273be16fc8>,
+  <matplotlib.lines.Line2D at 0x2273be1bc08>],
+ 'caps': [<matplotlib.lines.Line2D at 0x2273be1bcc8>,
+  <matplotlib.lines.Line2D at 0x2273be1fb88>],
+ 'boxes': [<matplotlib.lines.Line2D at 0x2273be16988>],
+ 'medians': [<matplotlib.lines.Line2D at 0x2273be1fc48>],
+ 'fliers': [<matplotlib.lines.Line2D at 0x2273be25b08>],
+ 'means': []}
+
+plt.plot(salary.YearsExperience,salary.Salary,"ro");plt.xlabel("YearsExperience");plt.ylabel("Salary")
+Text(0, 0.5, 'Salary')
+
+x = salary.iloc[:,:-1].values
+x
+array([[ 1.1],
+       [ 1.3],
+       [ 1.5],
+       [ 2. ],
+       [ 2.2],
+       [ 2.9],
+       [ 3. ],
+       [ 3.2],
+       [ 3.2],
+       [ 3.7],
+       [ 3.9],
+       [ 4. ],
+       [ 4. ],
+       [ 4.1],
+       [ 4.5],
+       [ 4.9],
+       [ 5.1],
+       [ 5.3],
+       [ 5.9],
+       [ 6. ],
+       [ 6.8],
+       [ 7.1],
+       [ 7.9],
+       [ 8.2],
+       [ 8.7],
+       [ 9. ],
+       [ 9.5],
+       [ 9.6],
+       [10.3],
+       [10.5]])
+y = salary.iloc[:,1].values
+y
+array([ 39343.,  46205.,  37731.,  43525.,  39891.,  56642.,  60150.,
+        54445.,  64445.,  57189.,  63218.,  55794.,  56957.,  57081.,
+        61111.,  67938.,  66029.,  83088.,  81363.,  93940.,  91738.,
+        98273., 101302., 113812., 109431., 105582., 116969., 112635.,
+       122391., 121872.])
+##### split data into training and test data####### 
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size = 1/3, random_state = 0)
+x_train,x_test,y_train,y_test
+(array([[ 2.9],
+        [ 5.1],
+        [ 3.2],
+        [ 4.5],
+        [ 8.2],
+        [ 6.8],
+        [ 1.3],
+        [10.5],
+        [ 3. ],
+        [ 2.2],
+        [ 5.9],
+        [ 6. ],
+        [ 3.7],
+        [ 3.2],
+        [ 9. ],
+        [ 2. ],
+        [ 1.1],
+        [ 7.1],
+        [ 4.9],
+        [ 4. ]]),
+ array([[ 1.5],
+        [10.3],
+        [ 4.1],
+        [ 3.9],
+        [ 9.5],
+        [ 8.7],
+        [ 9.6],
+        [ 4. ],
+        [ 5.3],
+        [ 7.9]]),
+ array([ 56642.,  66029.,  64445.,  61111., 113812.,  91738.,  46205.,
+        121872.,  60150.,  39891.,  81363.,  93940.,  57189.,  54445.,
+        105582.,  43525.,  39343.,  98273.,  67938.,  56957.]),
+ array([ 37731., 122391.,  57081.,  63218., 116969., 109431., 112635.,
+         55794.,  83088., 101302.]))
+##### fit simple linear regression model to training data ####### 
+
+from sklearn.linear_model import LinearRegression
+regressor = LinearRegression()
+regressor.fit(x_train,y_train)
+LinearRegression(copy_X=True, fit_intercept=True, n_jobs=None, normalize=False)
+##### make prediction ######  
+
+y_pred = regressor.predict(x_test)
+y_pred
+array([ 40835.10590871, 123079.39940819,  65134.55626083,  63265.36777221,
+       115602.64545369, 108125.8914992 , 116537.23969801,  64199.96201652,
+        76349.68719258, 100649.1375447 ])
+np.view(salary)
+---------------------------------------------------------------------------
+AttributeError                            Traceback (most recent call last)
+<ipython-input-41-b94db48dcd63> in <module>
+----> 1 np.view(salary)
+
+~\anaconda3\lib\site-packages\numpy\__init__.py in __getattr__(attr)
+    218             else:
+    219                 raise AttributeError("module {!r} has no attribute "
+--> 220                                      "{!r}".format(__name__, attr))
+    221 
+    222         def __dir__():
+
+AttributeError: module 'numpy' has no attribute 'view'
+salary
+YearsExperience	Salary
+0	1.1	39343.0
+1	1.3	46205.0
+2	1.5	37731.0
+3	2.0	43525.0
+4	2.2	39891.0
+5	2.9	56642.0
+6	3.0	60150.0
+7	3.2	54445.0
+8	3.2	64445.0
+9	3.7	57189.0
+10	3.9	63218.0
+11	4.0	55794.0
+12	4.0	56957.0
+13	4.1	57081.0
+14	4.5	61111.0
+15	4.9	67938.0
+16	5.1	66029.0
+17	5.3	83088.0
+18	5.9	81363.0
+19	6.0	93940.0
+20	6.8	91738.0
+21	7.1	98273.0
+22	7.9	101302.0
+23	8.2	113812.0
+24	8.7	109431.0
+25	9.0	105582.0
+26	9.5	116969.0
+27	9.6	112635.0
+28	10.3	122391.0
+29	10.5	121872.0
+##### visualising the training set ##### 
+
+plt.scatter(x_train,y_train,color = 'yellow')
+<matplotlib.collections.PathCollection at 0x2273ecad188>
+
+plt.scatter(x_train,regressor.predict(x_train),color = 'blue')
+<matplotlib.collections.PathCollection at 0x2273ece7ec8>
+
+plt.plot(x_train,regressor.predict(x_train),color = 'purple')
+[<matplotlib.lines.Line2D at 0x2273e3dddc8>]
+
+plt.scatter(x_train,y_train,color = 'red')
+plt.plot(x_train,regressor.predict(x_train),color = 'purple')
+plt.title('Salary vs YearsExperience(Training set)')
+plt.xlabel('YearsExperience')
+plt.ylabel('Salary')
+Text(0, 0.5, 'Salary')
+
+#### visualizing the test set ##### 
+
+plt.scatter(x_test,y_test,color = 'red')
+<matplotlib.collections.PathCollection at 0x2273e961388>
+
+plt.plot(x_train,regressor.predict(x_train),color = 'blue')
+[<matplotlib.lines.Line2D at 0x2273e9b3548>]
+
+plt.scatter(x_test,y_test,color = 'red')
+plt.plot(x_train,regressor.predict(x_train),color = 'blue')
+plt.title('Salary vs YearsExperience(Test set)')
+plt.xlabel('YearsExperience')
+plt.ylabel('Salary')
+plt.show()
+
+###### make new predictions which is not even in the data set ##### 
+
+new_salary_pred = regressor.predict([[15]])
+new_salary_pred
+array([167005.32889087])
+ 
