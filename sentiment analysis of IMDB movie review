@@ -1,0 +1,186 @@
+library(rvest)
+library(XML)
+library(magrittr)
+library(tm)
+library(wordcloud)
+library(wordcloud2)
+library(syuzhet)
+library(lubridate)
+library(ggplot2)
+library(scales)
+library(reshape2)
+library(dplyr)
+
+
+
+
+aurl <- "https://www.imdb.com/title/tt1477834/reviews?ref_=tt_ov_rt"
+IMDB_reviews <- NULL
+for (i in 1:10){
+  murl <- read_html(as.character(paste(aurl,i,sep="=")))
+  rev <- murl %>%
+    html_nodes(".show-more__control") %>%
+    html_text()
+  IMDB_reviews <- c(IMDB_reviews,rev)
+}
+length(IMDB_reviews)
+write.table(IMDB_reviews,"Aquaman.txt",row.names = F)
+
+Aquaman <- read.delim('Aquaman.txt')
+str(Aquaman)
+
+View(Aquaman)
+
+############# Building corpus and DTM/TDM ##########  
+
+corpus<- Aquaman[-1,]
+
+head(corpus)
+
+class(corpus)
+
+corpus<- Corpus(VectorSource(corpus))
+
+inspect(corpus[1:5])
+
+###### cleaning the text ############ 
+
+corpus<- tm_map(corpus,tolower)
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,removePunctuation)
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,removeNumbers)
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,stripWhitespace)
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,removeWords,stopwords('english'))
+
+inspect(corpus[1:5])
+
+removeURL<- function(x)gsub('http[[:alnum:]]*','',x)
+
+corpus<- tm_map(corpus,content_transformer(removeURL))
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,removeWords,c('can','film'))
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,removeWords,c('movie','movies'))
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,gsub,pattern = 'character',replacement = 'characters')
+
+inspect(corpus[1:5])
+
+corpus<- tm_map(corpus,stripWhitespace)
+
+inspect(corpus[1:5])
+
+
+###### termDocument Matrix ######### 
+
+tdm<- TermDocumentMatrix(corpus)
+
+tdm
+
+### # the terms indicate that there are 11566 words and 396260 documents(# of tweets) in this TDM
+# Sparsity is 97% which indicates that there are lots of zero values.
+
+tdm<- as.matrix(tdm)
+
+tdm[1:10,1:20] 
+
+###             Docs
+Terms        1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+always     0 1 0 0 0 0 0 0 0  0  0  0  0  0  0  0  0  0  0  0
+anything   0 1 0 0 0 0 0 0 0  0  0  0  0  0  0  0  0  0  0  0
+aquaman    0 1 0 0 0 1 0 0 0  0  0  1  0  0  0  1  0  1  0  0
+best       0 2 0 0 0 0 0 0 0  1  0  0  0  0  0  0  0  0  0  0
+bring      0 1 0 0 0 0 0 0 0  0  0  0  0  0  0  0  0  0  0  0
+certainly  0 2 0 0 0 0 0 0 0  0  0  0  0  0  0  0  0  0  0  0
+cgi        0 1 0 0 0 0 0 0 0  0  0  0  0  0  0  0  0  0  0  0
+challenge  0 1 0 0 0 0 0 0 0  0  0  0  0  0  0  0  0  0  0  0
+characters 0 1 0 0 0 1 0 0 0  1  0  0  0  0  0  0  0  0  0  0
+charm      0 1 0 0 0 0 0 0 0  0  0  0  0  0  0  0  0  0  0  0
+> ########################################################################
+
+##### Bar plot ###### 
+
+w<- rowSums(tdm)  ##### provide the no. of times a particular word has been used ###### 
+
+w<- subset(w,w>=50) #### pull words that were used more than and equal to 50 times ###### 
+
+barplot(w,las = 2, col = rainbow(50))
+
+###### wordcloud ######## 
+
+w<- sort(rowSums(tdm),decreasing = TRUE)
+
+set.seed(123)
+
+wordcloud(words = names(w),freq = w,
+          max.words = 250,random.order = F,
+          min.freq = 3,
+          colors = brewer.pal(8,'Dark2'),
+          scale = c(5,0.3),
+          rot.per = 0.6)
+
+w<- data.frame(names(w),w)
+
+colnames(w)<- c('word','freq')
+
+wordcloud(w,size = 0.7,shape = 'traingle',rotateRatio = 0.5,
+           minSize = 1)
+
+############# sentiment analysis ################ 
+
+IMDB_reviews<- read.delim('Aquaman.txt')
+
+reviews<- as.character(IMDB_reviews[-1,])
+
+class(reviews)
+
+###### obtaining sentiment scores ########## 
+
+s<- get_nrc_sentiment(reviews)
+
+head(s)
+
+###   anger anticipation disgust fear joy sadness surprise trust negative positive
+ 1     0            0       0    0   0       0        0     0        0        0
+ 2     1            3       0    3   1       2        1     2        3        8
+ 3     0            0       0    0   0       0        0     0        0        0
+ 4     3            1       2    3   1       2        0     0        3        3
+ 5     0            0       0    0   0       0        0     0        0        0
+ 6     2            0       1    2   0       2        0     1        3        1
+################################################################################################
+
+reviews[4]
+
+get_nrc_sentiment('splendid')
+
+#### anger anticipation disgust fear joy sadness surprise trust negative positive
+ 1     0            0       0    0   1       0        1     0        0        1
+
+get_nrc_sentiment('no words') 
+
+####   anger anticipation disgust fear joy sadness surprise trust negative positive
+1     1            0       0    0   0       0        0     0        1        0
+
+######## visualisation ########### 
+
+barplot(colSums(s),las = 2.5,col = rainbow(10),
+        ylab = 'Count',main = 'Sentiment scores for IMDB Reviews
+        for Aquaman')
+
