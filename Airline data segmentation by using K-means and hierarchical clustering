@@ -1,0 +1,111 @@
+library(readxl)
+library(kselection)
+install.packages("factoextra")
+library(factoextra)
+library(doParallel)
+library(animation)
+
+
+
+airplane<- read_xlsx(file.choose(),sheet = 2)
+
+View(airplane)
+
+str(airplane)
+
+attach(airplane)
+
+head(airplane)
+
+boxplot(airplane)
+
+############ using K-selection method ################# 
+
+k<- kselection((airplane),parallel = TRUE,k_threshold = 0.9,max_centers = 12)
+
+k
+
+k$max_centers
+
+registerDoParallel(cores = 5)
+
+k<- kselection((airplane),parallel = TRUE,k_threshold = 0.9, max_centers = 12)
+
+k
+
+######## normalizing data ############## 
+
+normalised_data<- scale(airplane)
+
+View(normalised_data) 
+
+summary(normalised_data)
+
+########## applying animation function and scree plot ############ 
+
+km<- kmeans(normalised_data,8) 
+
+str(km) 
+
+#### $ totss       : num 47976
+$ withinss    : num [1:8] 4281 2094 771 2577 398 ...
+$ tot.withinss: num 20516
+$ betweenss   : num 27460
+
+######## we are getting lesser withinss value and higher betweenss value when cluster number will be 8, and from point 8 to 9 we are almost touching slope, which we can get from elbow courve below##########
+
+
+km$cluster
+
+km$centers
+
+str(km)
+
+wss = (nrow(normalised_data)-1)*sum(apply(normalised_data, 2,var))
+
+for(i in 2:12)wss[i]=
+  sum(kmeans(normalised_data,centers = i)$withinss)
+
+plot(1:12,wss,type = "b",xlab = "number of cluster",ylab = "within group sum of squares")
+title(sub = "k-means clustering scree plot")
+
+fviz_nbclust(airplane,kmeans,method = "wss")+labs(subtitle = "Elbow method")
+
+##### from elbow method we can see the total within sum of sqares ie becoming less and almost equal to slope when the number of cluster is 7 to 8, there is no such big changes after 8 ##########
+##### so we can consider the cluster value is 8 where we can get lesser within sum of squares and higher between sum of sqaures vales ##### 
+
+########## applying hierarchical clustering ############### 
+
+d<- dist(normalised_data,method = "euclidean")
+
+fit<- hclust(d,method = "complete")
+
+plot(fit)
+
+plot(fit, hang = 1)
+
+groups = cutree(fit, k = 8)
+
+groups
+
+rect.hclust(fit,k = 8,border = "green")
+
+air<- as.matrix(groups)
+
+final<- data.frame(airplane,air)
+
+final1<- final[,c(ncol(final),1:(ncol(final)-1))]
+
+View(final1)
+
+###### second method ###### 
+
+final2<- data.frame(airplane,km$cluster)
+
+View(final2)
+
+final3<- final2[,c(ncol(final2),1:(ncol(final2)-1))]
+
+View(final3)
+
+aggregate(airplane[,1:12],by = list(km$cluster),FUN = mean)
