@@ -1,0 +1,189 @@
+library(animation)
+library(kselection)
+library(ggplot2)
+library(factoextra)
+library(cluster)
+install.packages("fpc")
+library(fpc)
+library(corrplot)
+library(Hmisc)
+
+wine1<- read.csv(file.choose())
+
+View(wine1)
+
+str(wine1)
+
+attach(wine1)
+
+summary(wine1) 
+
+head(wine1,10)
+
+head(wine1$Alcohol,10)
+
+head(wine1$Ash,10)
+
+tail(wine1,10)
+
+tail(wine1$Alcalinity,10)
+
+head(wine1$Phenols,10)
+
+####### correlation of the data set ########
+
+cor(wine1) 
+
+####### visualization ###########
+
+plot(wine1)
+
+corrplot(wine1.cor)
+
+plot(wine1$Alcohol,main = 'Alcohol',col = 'red')
+
+plot(wine1$Ash,main = 'Ashl',col = 'Blue')
+
+plot(wine1$Alcohol,wine1$Ash,main = 'Alcohol vs Ash',xlab = 'Alcohol',ylab ='Ash',col = 'green' )
+
+
+######## bar plot ########### 
+
+barplot(wine1$Malic, main = "Malic", col = 'orange')
+
+barplot(wine1$Alcalinity, main = "Alcalinity", col = 'red')
+
+barplot(wine1$Malic,wine1$Alcalinity,main = 'Malic vs Alcalinity',xlab = 'Malic',ylab ='Alacalinity',col = 'green' )
+
+######## checking outliers ######### 
+
+boxplot(wine1)
+
+boxplot(wine1$Alcohol)
+boxplot(wine1$Malic)
+boxplot(wine1$Ash)
+boxplot(wine1$Alcalinity)
+boxplot(wine1$Magnesium)
+boxplot(wine1$Phenols)
+boxplot(wine1$Flavanoids)
+boxplot(wine1$Proline)
+
+####### histogram plot ########## 
+
+hist(wine1$Alcohol,main = 'Alcohol',col = 'red')
+
+hist(wine1$Ash,main = 'Ash',col = 'Blue')
+
+hist(wine1$Magnesium,main = 'Magnesium',col = 'red')
+
+hist(wine1$Alcalinity,main = 'Alcalinity',col = 'pink')
+
+
+######### data processing and applying PCA model ############ 
+
+View(wine1[-1])  ########## considering only numeric value ######## 
+
+wine1data1<- wine1[,-1]
+
+attach(wine1data1)
+
+cor(wine1data1)
+
+pcawine1<- princomp(wine1data1,cor = TRUE,scores = TRUE,covmat = NULL)
+
+pcawine1
+
+str(pcawine1)
+
+plot(pcawine1)   ######### component1 having highest varience that means highest importance ######### 
+
+summary(pcawine1)
+
+loadings(pcawine1)
+
+pcawine1$scores[,1:3]
+
+wine_data<- cbind(wine1,pcawine1$scores[,1:3])
+
+View(wine_data) 
+
+######## K-means clustering ##############
+
+normalised_data<- scale(wine_data)
+
+View(normalised_data)
+
+km<- kmeans.ani(normalised_data)
+
+wss = (nrow(normalised_data)-1)*sum(apply(normalised_data,2,var))
+
+for (i in 1:3) wss[i] = 
+  sum(kmeans(normalised_data, centers = i)$withinss)
+
+plot(1:3,wss,type = "b", xlab = "Number of clusters",ylab = "within groups sum of sqaures")
+title(sub = "k-means clustering scree plot")
+
+fviz_nbclust(wine_data[,1:3],kmeans,method = "wss")+labs(subtitle = "Elbow method") ####### we should take 7 clusters as we can see after that there is no certain change in the plot##########
+
+############# Hierarchical clustering ############## 
+
+wine1data2<- cbind(wine1,pcawine1$scores[,1:3])
+
+View(wine1data2)
+
+clus_data<- wine1data2[,8:10]
+
+norm_clust<- scale(clus_data)
+
+dist1<- dist(norm_clust, method = "euclidean")
+
+fit1<- hclust(dist1, method = "complete")
+
+plot(fit1)
+
+groups<- cutree(fit1,7)
+
+cluster<- as.matrix(groups)
+
+final1<- cbind(cluster,wine1data2)
+
+View(final1)
+
+
+########### second method ##############
+
+d<- dist(normalised_data,method = "euclidean")
+
+fit<- hclust(d,method = "complete")
+
+plot(fit)
+
+plot(fit, hang = 1)
+
+groups = cutree(fit, k = 7)
+
+groups
+
+rect.hclust(fit,k = 7,border = "green")
+
+w<- as.matrix(groups)
+
+final<- data.frame(pcawine1$scores[,1:3],w)
+
+final1<- final[,c(ncol(final),1:(ncol(final)-1))]
+
+View(final1)
+
+###### third method ###### 
+
+final2<- data.frame(pcawine1$scores[,1:3],km$cluster)
+
+View(final2)
+
+final3<- final2[,c(ncol(final2),1:(ncol(final2)-1))]
+
+View(final3)
+
+aggregate(pcawine1$scores[,1:3],by = list(km$cluster),FUN = mean)
+
+
