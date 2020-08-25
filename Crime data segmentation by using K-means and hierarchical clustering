@@ -1,0 +1,139 @@
+library(readxl)
+library(kselection)
+install.packages("factoextra")
+library(factoextra)
+library(doParallel)
+library(animation)
+library(ggplot2)
+
+
+crime_data<- read.csv(file.choose())
+
+View(crime_data)
+
+str(crime_data)
+
+attach(crime_data)
+
+hist(crime_data$Murder)
+
+hist(crime_data$Assault)
+
+hist(crime_data$UrbanPop)
+
+hist(crime_data$Rape)
+
+ggplot(data = crime_data) + 
+  geom_point(mapping = aes(x = Rape, y = X))
+
+ggplot(data = crime_data) + 
+  geom_point(mapping = aes(x = Rape, y = X), color = "blue")
+
+ggplot(data = crime_data) + 
+  geom_point(mapping = aes(x = Murder, y = X), color = "blue")
+
+ggplot(data = crime_data) + 
+  geom_point(mapping = aes(x = Assault, y = X), color = "blue")
+
+ggplot(data = crime_data) + 
+  geom_point(mapping = aes(x = UrbanPop, y = X), color = "blue")
+
+k<- kselection(crime_data[,-1],parallel = TRUE,k_threshold = 0.9,max_centers = 12)
+
+k
+
+k$max_centers
+
+registerDoParallel(cores = 4)
+
+k<- kselection(crime_data[,-1],parallel = TRUE,k_threshold = 0.9, max_centers = 12)
+
+k
+
+######## normalizing data ############## 
+
+normalised_data<- scale(crime_data[1:50,c(2:5)])
+
+View(normalised_data) 
+summary(normalised_data)
+
+########## applying animation function and scree plot ############ 
+
+km<- kmeans(normalised_data,8) 
+
+str(km) 
+
+$ totss       : num 196
+$ withinss    : num [1:8] 8.19 2.2 6.13 1.81 3.18 ...
+$ tot.withinss: num 36
+$ betweenss   : num 160
+
+######## we are getting lesser withinss value and higher betweenss value when cluster number will be 8, and from point 8 to 9 we are almost touching slope, which we can get from elbow courve below##########
+
+
+km$cluster
+
+km$centers
+
+str(km)
+
+wss = (nrow(normalised_data)-1)*sum(apply(normalised_data, 2,var))
+
+for(i in 2:5)wss[i]=
+  sum(kmeans(normalised_data,centers = i)$withinss)
+
+plot(2:5,wss,type = "b",xlab = "number of cluster",ylab = "within group sum of squares")
+title(sub = "k-means clustering scree plot")
+
+fviz_nbclust(crime_data[1:50,c(2:5)],kmeans,method = "wss")+labs(subtitle = "Elbow method")
+
+##### from elbow method we can see the total within sum of sqares ie becoming less and almost equal to slope when the number of cluster is 7 to 8, there is no such big changes after 8 ##########
+##### so we can consider the cluster value is 8 where we can get lesser within sum of squares and higher between sum of sqaures vales ##### 
+
+########## applying hierarchical clustering ############### 
+
+d<- dist(normalised_data,method = "euclidean")
+
+fit<- hclust(d,method = "complete")
+
+plot(fit)
+
+plot(fit, hang = 1)
+
+groups = cutree(fit, k = 8)
+
+groups
+
+rect.hclust(fit,k = 8,border = "green")
+
+air<- as.matrix(groups)
+
+final<- data.frame(crime_data,air)
+
+final1<- final[,c(ncol(final),1:(ncol(final)-1))]
+
+View(final1)
+
+###### second method ###### 
+
+final2<- data.frame(crime_data,km$cluster)
+
+View(final2)
+
+final3<- final2[,c(ncol(final2),1:(ncol(final2)-1))]
+
+View(final3)
+
+aggregate(crime_data[,2:5],by = list(km$cluster),FUN = mean)
+#################################################################
+Group.1    Murder   Assault UrbanPop     Rape
+1       1 12.066667 281.66667 70.00000 36.23333
+2       2  2.920000  68.60000 42.20000  9.68000
+3       3 14.671429 251.28571 54.28571 21.68571
+4       4  2.750000  76.66667 60.16667 12.86667
+5       5  7.571429 136.14286 58.42857 18.21429
+6       6  4.757143 123.42857 81.85714 16.07143
+7       7  6.283333 165.16667 70.83333 23.48333
+8       8  9.866667 246.33333 83.00000 30.98333
+
+###############################################################
