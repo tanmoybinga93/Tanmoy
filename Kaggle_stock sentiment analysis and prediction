@@ -1,0 +1,214 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
+%matplotlib notebook
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold, GridSearchCV        ###RepeatedStratifiedKFold is used for cross validation
+import nltk
+from nltk.stem.porter import PorterStemmer
+from nltk import word_tokenize, WordNetLemmatizer
+from nltk.corpus import wordnet as wn
+from nltk.corpus import stopwords
+from collections import Counter    ###### The Counter holds the data in an unordered collection, just like hashtable objects. The elements here represent the keys and the count as values
+from wordcloud import WordCloud
+import re    #############  Perl-like regular expressions in Python. The re module raises the exception re. error if an error occurs while compiling or using a regular expression.
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
+sentiment_dataset = pd.read_csv("stock_data.csv")
+sentiment_dataset
+Text	Sentiment
+0	Kickers on my watchlist XIDE TIT SOQ PNK CPW B...	1
+1	user: AAP MOVIE. 55% return for the FEA/GEED i...	1
+2	user I'd be afraid to short AMZN - they are lo...	1
+3	MNTA Over 12.00	1
+4	OI Over 21.37	1
+...	...	...
+5786	Industry body CII said #discoms are likely to ...	-1
+5787	#Gold prices slip below Rs 46,000 as #investor...	-1
+5788	Workers at Bajaj Auto have agreed to a 10% wag...	1
+5789	#Sharemarket LIVE: Sensex off day’s high, up 6...	1
+5790	#Sensex, #Nifty climb off day's highs, still u...	1
+5791 rows × 2 columns
+
+sentiment_dataset.head()
+Text	Sentiment
+0	Kickers on my watchlist XIDE TIT SOQ PNK CPW B...	1
+1	user: AAP MOVIE. 55% return for the FEA/GEED i...	1
+2	user I'd be afraid to short AMZN - they are lo...	1
+3	MNTA Over 12.00	1
+4	OI Over 21.37	1
+sentiment_dataset.info
+<bound method DataFrame.info of                                                    Text  Sentiment
+0     Kickers on my watchlist XIDE TIT SOQ PNK CPW B...          1
+1     user: AAP MOVIE. 55% return for the FEA/GEED i...          1
+2     user I'd be afraid to short AMZN - they are lo...          1
+3                                     MNTA Over 12.00            1
+4                                      OI  Over 21.37            1
+...                                                 ...        ...
+5786  Industry body CII said #discoms are likely to ...         -1
+5787  #Gold prices slip below Rs 46,000 as #investor...         -1
+5788  Workers at Bajaj Auto have agreed to a 10% wag...          1
+5789  #Sharemarket LIVE: Sensex off day’s high, up 6...          1
+5790  #Sensex, #Nifty climb off day's highs, still u...          1
+
+[5791 rows x 2 columns]>
+###### percentage of positive and negative sentiment ############## 
+
+sentiment_dataset["Sentiment"].value_counts()/len(sentiment_dataset)*100
+ 1    63.633224
+-1    36.366776
+Name: Sentiment, dtype: float64
+##### plot the sentiment value count ###########
+
+sns.countplot(sentiment_dataset["Sentiment"])
+
+<AxesSubplot:xlabel='Sentiment', ylabel='count'>
+######### checking for stopwords ############ 
+
+stop_words= set(stopwords.words("english"))
+word_list = list()
+for i in range (len(sentiment_dataset)):
+    words = sentiment_dataset.Text[i].split()
+    for j in words:
+        word_list.append(j)
+##### stopwords present in the news text ########### 
+
+wordCounter = Counter(word_list)
+countedwordDict = dict(wordCounter)
+sortedWordDict= sorted(countedwordDict.items(),key = lambda X:X[1],reverse = True)
+sortedWordDict[0:20]
+[('the', 1796),
+ ('to', 1668),
+ ('a', 1280),
+ ('on', 1032),
+ ('of', 944),
+ ('in', 891),
+ ('AAP', 884),
+ ('for', 868),
+ ('and', 850),
+ ('is', 811),
+ ('-', 728),
+ ('at', 541),
+ ('this', 461),
+ ('it', 454),
+ ('I', 453),
+ ('up', 357),
+ ('user:', 340),
+ ('from', 331),
+ ('will', 330),
+ ('be', 324)]
+####### wordcloud ############ 
+
+stop_word_cloud = set(stopwords.words("english"))
+wordcloud = WordCloud(stopwords=stop_word_cloud,max_words=2000,background_color="black",min_font_size=5).generate_from_frequencies(countedwordDict)
+plt.figure(figsize=[10,6])
+plt.axis("off")
+plt.imshow(wordcloud)   
+plt.show()
+
+######## data processing ########## 
+###### replacing the negatives with 0, so that model can predict well ########## 
+
+sentiment_dataset["Sentiment"] = sentiment_dataset["Sentiment"].replace(-1,0)
+######## applying NLP ########### 
+
+ps = PorterStemmer()
+lemma = WordNetLemmatizer()
+stopwordSet = set(stopwords.words("english"))
+##### cleaning the text ########## 
+nltk.download('punkt')
+nltk.download('wordnet')
+[nltk_data] Downloading package punkt to
+[nltk_data]     C:\Users\Dipsikha\AppData\Roaming\nltk_data...
+[nltk_data]   Package punkt is already up-to-date!
+[nltk_data] Downloading package wordnet to
+[nltk_data]     C:\Users\Dipsikha\AppData\Roaming\nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+True
+text_reviews = list()
+for i in range(len(sentiment_dataset)):
+    text = re.sub('[^a-zA-Z]'," ",sentiment_dataset['Text'][i])
+    text = text.lower()
+    text = word_tokenize(text,language="english")
+    text = [lemma.lemmatize(word) for word in text if(word) not in stopwordSet]
+    text = " ".join(text)
+    text_reviews.append(text)
+######## creating the bag of words ########## 
+
+cv = CountVectorizer(max_features=1500)
+X = cv.fit_transform(text_reviews).toarray()
+Y = sentiment_dataset["Sentiment"]
+
+#### split the dataset into training and test ########### 
+
+X_train,X_test,y_train,y_test= train_test_split(X,Y,test_size=0.25,random_state=1)
+########### modelling with logistic regression ############ 
+
+logreg = LogisticRegression()
+logreg.fit(X_train,y_train)
+Y_pred = logreg.predict(X_test)
+print("LogisticRegression\n")
+print("confusion matrix:\n {}".format(confusion_matrix(y_test,Y_pred)))
+print("\n\naccuracy: {}".format(accuracy_score(y_test,Y_pred)))
+LogisticRegression
+
+confusion matrix:
+ [[322 204]
+ [132 790]]
+
+
+accuracy: 0.7679558011049724
+logreg = LogisticRegression()
+
+#listing hyperparameters
+solvers = ['newton-cg', 'lbfgs', 'liblinear']
+penalty = ['l2']
+c_values = [100, 10, 1.0, 0.1, 0.01]
+
+# define grid search
+grid = dict(solver=solvers,penalty=penalty,C=c_values)
+cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+grid_search = GridSearchCV(estimator=logreg, param_grid=grid, n_jobs=-1, cv=cv, scoring='accuracy',error_score=0)
+grid_result = grid_search.fit(X_train, y_train)
+
+
+# summarize results
+print("Best accuracy: %f using %s" % (grid_result.best_score_, grid_result.best_params_)) 
+Best accuracy: 0.774583 using {'C': 1.0, 'penalty': 'l2', 'solver': 'liblinear'}
+########### applying randomforest model ###########
+
+random_forest=RandomForestClassifier(n_estimators=1000)
+random_forest.fit(X_train,y_train)
+Y_pred = random_forest.predict(X_test)
+print("Random Forest\n")
+print("confusion matrix:\n {}".format(confusion_matrix(y_test,Y_pred)))
+print("\n\naccuracy: {}".format(accuracy_score(y_test,Y_pred)))
+Random Forest
+
+confusion matrix:
+ [[332 194]
+ [154 768]]
+
+
+accuracy: 0.7596685082872928
+random_forest = RandomForestClassifier()
+
+#listing hyperparameters
+n_estimators = [10, 100, 1000]
+max_features = ['sqrt', 'log2']
+
+# defining grid search
+grid = dict(n_estimators=n_estimators,max_features=max_features)
+cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+grid_search = GridSearchCV(estimator=random_forest, param_grid=grid, cv=cv, scoring='accuracy',error_score=0)
+grid_result = grid_search.fit(X_train, y_train)
+
+
+# summarizing results
+print("Best accuracy: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+ 
