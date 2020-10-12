@@ -1,0 +1,1425 @@
+Business Objective:
+Each Salesperson will be assigned with a Target(no of products to be sold) for each months. Which is given to them based on #their last month's Achievement(no of products sold) i.e 10% Increased from the last achievement.
+Data Set Details:
+-We can implement a model to predict the target given to them for the next month based on their previous achievement instead of #giving them simply a 10% hike.
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+sales_target = pd.read_csv('Future_sales_train.csv')
+sales_target
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	PROD_3	SLSMAN_1	10	2019	80	0
+1	PROD_3	SLSMAN_1	11	2019	80	0
+2	PROD_3	SLSMAN_1	12	2019	40	0
+3	PROD_5	SLSMAN_1	10	2019	160	211
+4	PROD_5	SLSMAN_1	11	2019	160	173
+...	...	...	...	...	...	...
+22464	PROD_70	SLSMAN_225	11	2019	0	126
+22465	PROD_70	SLSMAN_225	12	2019	0	222
+22466	PROD_75	SLSMAN_225	12	2019	0	4
+22467	PROD_78	SLSMAN_225	11	2019	0	122
+22468	PROD_78	SLSMAN_225	12	2019	0	210
+22469 rows × 6 columns
+
+sales_target.head()
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	PROD_3	SLSMAN_1	10	2019	80	0
+1	PROD_3	SLSMAN_1	11	2019	80	0
+2	PROD_3	SLSMAN_1	12	2019	40	0
+3	PROD_5	SLSMAN_1	10	2019	160	211
+4	PROD_5	SLSMAN_1	11	2019	160	173
+sales_target.tail()
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+22464	PROD_70	SLSMAN_225	11	2019	0	126
+22465	PROD_70	SLSMAN_225	12	2019	0	222
+22466	PROD_75	SLSMAN_225	12	2019	0	4
+22467	PROD_78	SLSMAN_225	11	2019	0	122
+22468	PROD_78	SLSMAN_225	12	2019	0	210
+sales_target.describe()
+PLAN_MONTH	PLAN_YEAR
+count	22469.000000	22469.0
+mean	11.039744	2019.0
+std	0.800889	0.0
+min	10.000000	2019.0
+25%	10.000000	2019.0
+50%	11.000000	2019.0
+75%	12.000000	2019.0
+max	12.000000	2019.0
+sales_target.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 22469 entries, 0 to 22468
+Data columns (total 6 columns):
+ #   Column        Non-Null Count  Dtype 
+---  ------        --------------  ----- 
+ 0   PROD_CD       22469 non-null  object
+ 1   SLSMAN_CD     22469 non-null  object
+ 2   PLAN_MONTH    22469 non-null  int64 
+ 3   PLAN_YEAR     22469 non-null  int64 
+ 4   TARGET_IN_EA  22469 non-null  object
+ 5   ACH_IN_EA     22469 non-null  object
+dtypes: int64(2), object(4)
+memory usage: 1.0+ MB
+sales_target['SLSMAN_CD'].value_counts()
+SLSMAN_62     157
+SLSMAN_138    151
+SLSMAN_19     142
+SLSMAN_58     141
+SLSMAN_99     140
+             ... 
+SLSMAN_203     15
+SLSMAN_77       7
+SLSMAN_55       5
+SLSMAN_78       2
+SLSMAN_167      2
+Name: SLSMAN_CD, Length: 224, dtype: int64
+sales_target.isnull().sum()
+PROD_CD         0
+SLSMAN_CD       0
+PLAN_MONTH      0
+PLAN_YEAR       0
+TARGET_IN_EA    0
+ACH_IN_EA       0
+dtype: int64
+labels = sales_target['PROD_CD'].astype('category').cat.categories.tolist()
+replace = {'PROD_CD':{k: v for k, v in zip(labels,list(range(1,len(labels)+1)))}}
+replace
+{'PROD_CD': {'PROD_1': 1,
+  'PROD_10': 2,
+  'PROD_11': 3,
+  'PROD_12': 4,
+  'PROD_13': 5,
+  'PROD_14': 6,
+  'PROD_15': 7,
+  'PROD_16': 8,
+  'PROD_17': 9,
+  'PROD_18': 10,
+  'PROD_19': 11,
+  'PROD_2': 12,
+  'PROD_20': 13,
+  'PROD_21': 14,
+  'PROD_22': 15,
+  'PROD_23': 16,
+  'PROD_24': 17,
+  'PROD_25': 18,
+  'PROD_26': 19,
+  'PROD_27': 20,
+  'PROD_28': 21,
+  'PROD_29': 22,
+  'PROD_3': 23,
+  'PROD_30': 24,
+  'PROD_31': 25,
+  'PROD_32': 26,
+  'PROD_33': 27,
+  'PROD_34': 28,
+  'PROD_35': 29,
+  'PROD_36': 30,
+  'PROD_37': 31,
+  'PROD_38': 32,
+  'PROD_39': 33,
+  'PROD_4': 34,
+  'PROD_40': 35,
+  'PROD_41': 36,
+  'PROD_42': 37,
+  'PROD_43': 38,
+  'PROD_44': 39,
+  'PROD_45': 40,
+  'PROD_46': 41,
+  'PROD_47': 42,
+  'PROD_48': 43,
+  'PROD_49': 44,
+  'PROD_5': 45,
+  'PROD_50': 46,
+  'PROD_51': 47,
+  'PROD_52': 48,
+  'PROD_53': 49,
+  'PROD_54': 50,
+  'PROD_55': 51,
+  'PROD_56': 52,
+  'PROD_57': 53,
+  'PROD_58': 54,
+  'PROD_59': 55,
+  'PROD_6': 56,
+  'PROD_60': 57,
+  'PROD_61': 58,
+  'PROD_62': 59,
+  'PROD_63': 60,
+  'PROD_64': 61,
+  'PROD_65': 62,
+  'PROD_66': 63,
+  'PROD_67': 64,
+  'PROD_68': 65,
+  'PROD_69': 66,
+  'PROD_7': 67,
+  'PROD_70': 68,
+  'PROD_71': 69,
+  'PROD_72': 70,
+  'PROD_73': 71,
+  'PROD_74': 72,
+  'PROD_75': 73,
+  'PROD_76': 74,
+  'PROD_77': 75,
+  'PROD_78': 76,
+  'PROD_79': 77,
+  'PROD_8': 78,
+  'PROD_80': 79,
+  'PROD_81': 80,
+  'PROD_82': 81,
+  'PROD_83': 82,
+  'PROD_84': 83,
+  'PROD_85': 84,
+  'PROD_86': 85,
+  'PROD_9': 86}}
+labels = sales_target['SLSMAN_CD'].astype('category').cat.categories.tolist()
+replace1 = {'SLSMAN_CD':{k: v for k, v in zip(labels,list(range(1,len(labels)+1)))}}
+replace1
+                                              
+{'SLSMAN_CD': {'SLSMAN_1': 1,
+  'SLSMAN_10': 2,
+  'SLSMAN_100': 3,
+  'SLSMAN_101': 4,
+  'SLSMAN_102': 5,
+  'SLSMAN_103': 6,
+  'SLSMAN_104': 7,
+  'SLSMAN_105': 8,
+  'SLSMAN_106': 9,
+  'SLSMAN_107': 10,
+  'SLSMAN_108': 11,
+  'SLSMAN_109': 12,
+  'SLSMAN_11': 13,
+  'SLSMAN_110': 14,
+  'SLSMAN_111': 15,
+  'SLSMAN_112': 16,
+  'SLSMAN_113': 17,
+  'SLSMAN_114': 18,
+  'SLSMAN_115': 19,
+  'SLSMAN_116': 20,
+  'SLSMAN_117': 21,
+  'SLSMAN_118': 22,
+  'SLSMAN_119': 23,
+  'SLSMAN_12': 24,
+  'SLSMAN_120': 25,
+  'SLSMAN_121': 26,
+  'SLSMAN_122': 27,
+  'SLSMAN_123': 28,
+  'SLSMAN_124': 29,
+  'SLSMAN_125': 30,
+  'SLSMAN_126': 31,
+  'SLSMAN_127': 32,
+  'SLSMAN_128': 33,
+  'SLSMAN_129': 34,
+  'SLSMAN_13': 35,
+  'SLSMAN_130': 36,
+  'SLSMAN_131': 37,
+  'SLSMAN_132': 38,
+  'SLSMAN_133': 39,
+  'SLSMAN_134': 40,
+  'SLSMAN_135': 41,
+  'SLSMAN_136': 42,
+  'SLSMAN_137': 43,
+  'SLSMAN_138': 44,
+  'SLSMAN_139': 45,
+  'SLSMAN_14': 46,
+  'SLSMAN_140': 47,
+  'SLSMAN_141': 48,
+  'SLSMAN_142': 49,
+  'SLSMAN_143': 50,
+  'SLSMAN_144': 51,
+  'SLSMAN_145': 52,
+  'SLSMAN_146': 53,
+  'SLSMAN_147': 54,
+  'SLSMAN_148': 55,
+  'SLSMAN_149': 56,
+  'SLSMAN_15': 57,
+  'SLSMAN_150': 58,
+  'SLSMAN_151': 59,
+  'SLSMAN_152': 60,
+  'SLSMAN_153': 61,
+  'SLSMAN_154': 62,
+  'SLSMAN_155': 63,
+  'SLSMAN_156': 64,
+  'SLSMAN_157': 65,
+  'SLSMAN_158': 66,
+  'SLSMAN_159': 67,
+  'SLSMAN_16': 68,
+  'SLSMAN_160': 69,
+  'SLSMAN_161': 70,
+  'SLSMAN_162': 71,
+  'SLSMAN_163': 72,
+  'SLSMAN_164': 73,
+  'SLSMAN_165': 74,
+  'SLSMAN_166': 75,
+  'SLSMAN_167': 76,
+  'SLSMAN_168': 77,
+  'SLSMAN_169': 78,
+  'SLSMAN_17': 79,
+  'SLSMAN_170': 80,
+  'SLSMAN_171': 81,
+  'SLSMAN_172': 82,
+  'SLSMAN_173': 83,
+  'SLSMAN_174': 84,
+  'SLSMAN_175': 85,
+  'SLSMAN_176': 86,
+  'SLSMAN_177': 87,
+  'SLSMAN_178': 88,
+  'SLSMAN_179': 89,
+  'SLSMAN_18': 90,
+  'SLSMAN_180': 91,
+  'SLSMAN_181': 92,
+  'SLSMAN_182': 93,
+  'SLSMAN_183': 94,
+  'SLSMAN_184': 95,
+  'SLSMAN_185': 96,
+  'SLSMAN_186': 97,
+  'SLSMAN_187': 98,
+  'SLSMAN_188': 99,
+  'SLSMAN_189': 100,
+  'SLSMAN_19': 101,
+  'SLSMAN_190': 102,
+  'SLSMAN_191': 103,
+  'SLSMAN_192': 104,
+  'SLSMAN_193': 105,
+  'SLSMAN_194': 106,
+  'SLSMAN_195': 107,
+  'SLSMAN_196': 108,
+  'SLSMAN_197': 109,
+  'SLSMAN_198': 110,
+  'SLSMAN_199': 111,
+  'SLSMAN_2': 112,
+  'SLSMAN_20': 113,
+  'SLSMAN_200': 114,
+  'SLSMAN_201': 115,
+  'SLSMAN_202': 116,
+  'SLSMAN_203': 117,
+  'SLSMAN_204': 118,
+  'SLSMAN_205': 119,
+  'SLSMAN_206': 120,
+  'SLSMAN_207': 121,
+  'SLSMAN_208': 122,
+  'SLSMAN_209': 123,
+  'SLSMAN_21': 124,
+  'SLSMAN_210': 125,
+  'SLSMAN_211': 126,
+  'SLSMAN_212': 127,
+  'SLSMAN_213': 128,
+  'SLSMAN_214': 129,
+  'SLSMAN_215': 130,
+  'SLSMAN_216': 131,
+  'SLSMAN_217': 132,
+  'SLSMAN_218': 133,
+  'SLSMAN_219': 134,
+  'SLSMAN_22': 135,
+  'SLSMAN_220': 136,
+  'SLSMAN_221': 137,
+  'SLSMAN_222': 138,
+  'SLSMAN_223': 139,
+  'SLSMAN_224': 140,
+  'SLSMAN_225': 141,
+  'SLSMAN_23': 142,
+  'SLSMAN_24': 143,
+  'SLSMAN_25': 144,
+  'SLSMAN_26': 145,
+  'SLSMAN_27': 146,
+  'SLSMAN_28': 147,
+  'SLSMAN_29': 148,
+  'SLSMAN_3': 149,
+  'SLSMAN_30': 150,
+  'SLSMAN_31': 151,
+  'SLSMAN_32': 152,
+  'SLSMAN_33': 153,
+  'SLSMAN_34': 154,
+  'SLSMAN_35': 155,
+  'SLSMAN_36': 156,
+  'SLSMAN_37': 157,
+  'SLSMAN_38': 158,
+  'SLSMAN_39': 159,
+  'SLSMAN_4': 160,
+  'SLSMAN_40': 161,
+  'SLSMAN_41': 162,
+  'SLSMAN_42': 163,
+  'SLSMAN_43': 164,
+  'SLSMAN_44': 165,
+  'SLSMAN_45': 166,
+  'SLSMAN_46': 167,
+  'SLSMAN_47': 168,
+  'SLSMAN_48': 169,
+  'SLSMAN_49': 170,
+  'SLSMAN_5': 171,
+  'SLSMAN_50': 172,
+  'SLSMAN_51': 173,
+  'SLSMAN_52': 174,
+  'SLSMAN_53': 175,
+  'SLSMAN_54': 176,
+  'SLSMAN_55': 177,
+  'SLSMAN_56': 178,
+  'SLSMAN_57': 179,
+  'SLSMAN_58': 180,
+  'SLSMAN_59': 181,
+  'SLSMAN_6': 182,
+  'SLSMAN_60': 183,
+  'SLSMAN_61': 184,
+  'SLSMAN_62': 185,
+  'SLSMAN_63': 186,
+  'SLSMAN_64': 187,
+  'SLSMAN_65': 188,
+  'SLSMAN_66': 189,
+  'SLSMAN_67': 190,
+  'SLSMAN_68': 191,
+  'SLSMAN_69': 192,
+  'SLSMAN_7': 193,
+  'SLSMAN_70': 194,
+  'SLSMAN_71': 195,
+  'SLSMAN_73': 196,
+  'SLSMAN_74': 197,
+  'SLSMAN_75': 198,
+  'SLSMAN_76': 199,
+  'SLSMAN_77': 200,
+  'SLSMAN_78': 201,
+  'SLSMAN_79': 202,
+  'SLSMAN_8': 203,
+  'SLSMAN_80': 204,
+  'SLSMAN_81': 205,
+  'SLSMAN_82': 206,
+  'SLSMAN_83': 207,
+  'SLSMAN_84': 208,
+  'SLSMAN_85': 209,
+  'SLSMAN_86': 210,
+  'SLSMAN_87': 211,
+  'SLSMAN_88': 212,
+  'SLSMAN_89': 213,
+  'SLSMAN_9': 214,
+  'SLSMAN_90': 215,
+  'SLSMAN_91': 216,
+  'SLSMAN_92': 217,
+  'SLSMAN_93': 218,
+  'SLSMAN_94': 219,
+  'SLSMAN_95': 220,
+  'SLSMAN_96': 221,
+  'SLSMAN_97': 222,
+  'SLSMAN_98': 223,
+  'SLSMAN_99': 224}}
+sales_target1 = sales_target.copy()
+sales_target1.replace(replace1,inplace=True)
+print(sales_target1.head(10))
+   PROD_CD  SLSMAN_CD  PLAN_MONTH  PLAN_YEAR TARGET_IN_EA ACH_IN_EA
+0   PROD_3          1          10       2019           80         0
+1   PROD_3          1          11       2019           80         0
+2   PROD_3          1          12       2019           40         0
+3   PROD_5          1          10       2019          160       211
+4   PROD_5          1          11       2019          160       173
+5   PROD_5          1          12       2019          240       175
+6   PROD_8          1          10       2019            0         7
+7  PROD_10          1          10       2019            0        82
+8  PROD_10          1          11       2019            0        79
+9  PROD_10          1          12       2019            0        59
+sales_target1.replace(replace,inplace=True)
+print(sales_target1.head())
+   PROD_CD  SLSMAN_CD  PLAN_MONTH  PLAN_YEAR TARGET_IN_EA ACH_IN_EA
+0       23          1          10       2019           80         0
+1       23          1          11       2019           80         0
+2       23          1          12       2019           40         0
+3       45          1          10       2019          160       211
+4       45          1          11       2019          160       173
+sales_target1
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	23	1	10	2019	80	0
+1	23	1	11	2019	80	0
+2	23	1	12	2019	40	0
+3	45	1	10	2019	160	211
+4	45	1	11	2019	160	173
+...	...	...	...	...	...	...
+22464	68	141	11	2019	0	126
+22465	68	141	12	2019	0	222
+22466	73	141	12	2019	0	4
+22467	76	141	11	2019	0	122
+22468	76	141	12	2019	0	210
+22469 rows × 6 columns
+
+sales_target1.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 22469 entries, 0 to 22468
+Data columns (total 6 columns):
+ #   Column        Non-Null Count  Dtype 
+---  ------        --------------  ----- 
+ 0   PROD_CD       22469 non-null  int64 
+ 1   SLSMAN_CD     22469 non-null  int64 
+ 2   PLAN_MONTH    22469 non-null  int64 
+ 3   PLAN_YEAR     22469 non-null  int64 
+ 4   TARGET_IN_EA  22469 non-null  object
+ 5   ACH_IN_EA     22469 non-null  object
+dtypes: int64(4), object(2)
+memory usage: 1.0+ MB
+sales_target1.describe()
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR
+count	22469.000000	22469.000000	22469.000000	22469.0
+mean	35.109529	110.290578	11.039744	2019.0
+std	23.665013	66.624366	0.800889	0.0
+min	1.000000	1.000000	10.000000	2019.0
+25%	15.000000	50.000000	10.000000	2019.0
+50%	31.000000	106.000000	11.000000	2019.0
+75%	52.000000	168.000000	12.000000	2019.0
+max	86.000000	224.000000	12.000000	2019.0
+sales_target1['TARGET_IN_EA']= sales_target1['TARGET_IN_EA'].str.replace(',','').astype(int)
+sales_target1['TARGET_IN_EA']
+0         80
+1         80
+2         40
+3        160
+4        160
+        ... 
+22464      0
+22465      0
+22466      0
+22467      0
+22468      0
+Name: TARGET_IN_EA, Length: 22469, dtype: int32
+sales_target1['ACH_IN_EA']= sales_target1['ACH_IN_EA'].str.replace(',','').astype(int)
+sales_target1
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	23	1	10	2019	80	0
+1	23	1	11	2019	80	0
+2	23	1	12	2019	40	0
+3	45	1	10	2019	160	211
+4	45	1	11	2019	160	173
+...	...	...	...	...	...	...
+22464	68	141	11	2019	0	126
+22465	68	141	12	2019	0	222
+22466	73	141	12	2019	0	4
+22467	76	141	11	2019	0	122
+22468	76	141	12	2019	0	210
+22469 rows × 6 columns
+
+sns.regplot(x=sales_target1.index.values,y=sales_target1['TARGET_IN_EA'])
+<AxesSubplot:ylabel='TARGET_IN_EA'>
+
+sns.regplot(x=sales_target1.index.values,y=sales_target1['TARGET_IN_EA'],order=2)
+<AxesSubplot:ylabel='TARGET_IN_EA'>
+
+sales_target1['TARGET_IN_EA'].plot(kind='density',title='Target distribution',fontsize=14,figsize=(10,6))
+<AxesSubplot:title={'center':'Target distribution'}, ylabel='Density'>
+
+box_plot = sales_target1['TARGET_IN_EA'].plot(kind = 'box',vert = False,fontsize = 14,title = 'Target box plot',figsize = (10,6))
+
+sales_target1.groupby('PLAN_MONTH')['TARGET_IN_EA'].mean()
+PLAN_MONTH
+10    4491.333924
+11    3284.776365
+12    3698.947588
+Name: TARGET_IN_EA, dtype: float64
+sales_target1.groupby('PLAN_MONTH')['TARGET_IN_EA'].mean().plot()
+<AxesSubplot:xlabel='PLAN_MONTH'>
+
+sales_target1
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	23	1	10	2019	80	0
+1	23	1	11	2019	80	0
+2	23	1	12	2019	40	0
+3	45	1	10	2019	160	211
+4	45	1	11	2019	160	173
+...	...	...	...	...	...	...
+22464	68	141	11	2019	0	126
+22465	68	141	12	2019	0	222
+22466	73	141	12	2019	0	4
+22467	76	141	11	2019	0	122
+22468	76	141	12	2019	0	210
+22469 rows × 6 columns
+
+#### Auto correlation plot 
+
+from pandas.plotting import autocorrelation_plot
+autocorrelation_plot(sales_target1['TARGET_IN_EA'])
+<AxesSubplot:xlabel='Lag', ylabel='Autocorrelation'>
+
+sns.factorplot(data = sales_target1, x ="PLAN_MONTH", y = "TARGET_IN_EA")
+C:\Users\Dipsikha\anaconda3\lib\site-packages\seaborn\categorical.py:3669: UserWarning: The `factorplot` function has been renamed to `catplot`. The original name will be removed in a future release. Please update your code. Note that the default `kind` in `factorplot` (`'point'`) has changed `'strip'` in `catplot`.
+  warnings.warn(msg)
+<seaborn.axisgrid.FacetGrid at 0x22cee7ec248>
+
+sns.factorplot(data = sales_target1, x ="PLAN_MONTH", y = "TARGET_IN_EA",row='PLAN_MONTH')
+C:\Users\Dipsikha\anaconda3\lib\site-packages\seaborn\categorical.py:3669: UserWarning: The `factorplot` function has been renamed to `catplot`. The original name will be removed in a future release. Please update your code. Note that the default `kind` in `factorplot` (`'point'`) has changed `'strip'` in `catplot`.
+  warnings.warn(msg)
+<seaborn.axisgrid.FacetGrid at 0x22cef8061c8>
+
+sales_target1.head()
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	23	1	10	2019	80	0
+1	23	1	11	2019	80	0
+2	23	1	12	2019	40	0
+3	45	1	10	2019	160	211
+4	45	1	11	2019	160	173
+sns.pairplot(sales_target1)
+<seaborn.axisgrid.PairGrid at 0x22cefb18948>
+
+plt.figure(figsize=(10,8))
+sns.heatmap(sales_target1.corr(),annot=True)
+plt.show()
+
+ 
+plt.figure(figsize=(15,12))
+sns.countplot(x='PROD_CD',data= sales_target1)
+plt.show()
+
+sales_target1['SLSMAN_CD'].value_counts()[:20].plot(kind='barh') ### 'SLSMAN_CD'-138,186 & 103 having highest frequency.
+<AxesSubplot:>
+
+sales_target_test = pd.read_csv("future_sales_data_csv.csv")
+sales_target_test.head(10)
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	PROD_3	SLSMAN_1	1	2020	40	0
+1	PROD_5	SLSMAN_1	1	2020	240	0
+2	PROD_11	SLSMAN_1	1	2020	360	0
+3	PROD_13	SLSMAN_1	1	2020	12,816	0
+4	PROD_14	SLSMAN_1	1	2020	44,460	0
+5	PROD_15	SLSMAN_1	1	2020	15,012	0
+6	PROD_16	SLSMAN_1	1	2020	2,268	0
+7	PROD_17	SLSMAN_1	1	2020	22,320	0
+8	PROD_18	SLSMAN_1	1	2020	9,300	0
+9	PROD_19	SLSMAN_1	1	2020	19,320	0
+sales_target_test.isnull().sum()
+PROD_CD         0
+SLSMAN_CD       0
+PLAN_MONTH      0
+PLAN_YEAR       0
+TARGET_IN_EA    0
+ACH_IN_EA       0
+dtype: int64
+##### Count of every different product code
+sales_target_test["PROD_CD"].value_counts()
+PROD_50    176
+PROD_59    176
+PROD_47    175
+PROD_14    173
+PROD_80    173
+PROD_15    173
+PROD_13    172
+PROD_45    172
+PROD_16    171
+PROD_38    170
+PROD_26    170
+PROD_42    170
+PROD_39    170
+PROD_5     170
+PROD_25    170
+PROD_23    169
+PROD_37    169
+PROD_27    168
+PROD_11    167
+PROD_19    166
+PROD_58    164
+PROD_22    163
+PROD_56    162
+PROD_36    159
+PROD_35    158
+PROD_81    143
+PROD_32    140
+PROD_33    139
+PROD_3     120
+PROD_31    118
+PROD_62    112
+PROD_61    111
+PROD_18    108
+PROD_17    108
+PROD_51     65
+PROD_83     65
+PROD_43     65
+PROD_82     65
+PROD_20     60
+PROD_21     45
+PROD_54     45
+PROD_52     24
+PROD_28     21
+PROD_48     16
+PROD_4      10
+PROD_6       4
+PROD_78      4
+PROD_60      4
+PROD_7       4
+PROD_75      3
+PROD_70      3
+PROD_55      2
+PROD_79      2
+PROD_57      2
+PROD_12      2
+PROD_8       1
+PROD_30      1
+PROD_53      1
+Name: PROD_CD, dtype: int64
+#### Count of every different Salesman code
+sales_target_test["SLSMAN_CD"].value_counts()
+SLSMAN_103    39
+SLSMAN_186    39
+SLSMAN_138    39
+SLSMAN_105    38
+SLSMAN_6      38
+              ..
+SLSMAN_199    17
+SLSMAN_201    16
+SLSMAN_141    16
+SLSMAN_202    14
+SLSMAN_200    11
+Name: SLSMAN_CD, Length: 177, dtype: int64
+sales_target_test.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 5839 entries, 0 to 5838
+Data columns (total 6 columns):
+ #   Column        Non-Null Count  Dtype 
+---  ------        --------------  ----- 
+ 0   PROD_CD       5839 non-null   object
+ 1   SLSMAN_CD     5839 non-null   object
+ 2   PLAN_MONTH    5839 non-null   int64 
+ 3   PLAN_YEAR     5839 non-null   int64 
+ 4   TARGET_IN_EA  5839 non-null   object
+ 5   ACH_IN_EA     5839 non-null   int64 
+dtypes: int64(3), object(3)
+memory usage: 273.8+ KB
+labels = sales_target_test['PROD_CD'].astype('category').cat.categories.tolist()
+replace2 = {'PROD_CD':{k: v for k, v in zip(labels,list(range(1,len(labels)+1)))}}
+replace2
+{'PROD_CD': {'PROD_11': 1,
+  'PROD_12': 2,
+  'PROD_13': 3,
+  'PROD_14': 4,
+  'PROD_15': 5,
+  'PROD_16': 6,
+  'PROD_17': 7,
+  'PROD_18': 8,
+  'PROD_19': 9,
+  'PROD_20': 10,
+  'PROD_21': 11,
+  'PROD_22': 12,
+  'PROD_23': 13,
+  'PROD_25': 14,
+  'PROD_26': 15,
+  'PROD_27': 16,
+  'PROD_28': 17,
+  'PROD_3': 18,
+  'PROD_30': 19,
+  'PROD_31': 20,
+  'PROD_32': 21,
+  'PROD_33': 22,
+  'PROD_35': 23,
+  'PROD_36': 24,
+  'PROD_37': 25,
+  'PROD_38': 26,
+  'PROD_39': 27,
+  'PROD_4': 28,
+  'PROD_42': 29,
+  'PROD_43': 30,
+  'PROD_45': 31,
+  'PROD_47': 32,
+  'PROD_48': 33,
+  'PROD_5': 34,
+  'PROD_50': 35,
+  'PROD_51': 36,
+  'PROD_52': 37,
+  'PROD_53': 38,
+  'PROD_54': 39,
+  'PROD_55': 40,
+  'PROD_56': 41,
+  'PROD_57': 42,
+  'PROD_58': 43,
+  'PROD_59': 44,
+  'PROD_6': 45,
+  'PROD_60': 46,
+  'PROD_61': 47,
+  'PROD_62': 48,
+  'PROD_7': 49,
+  'PROD_70': 50,
+  'PROD_75': 51,
+  'PROD_78': 52,
+  'PROD_79': 53,
+  'PROD_8': 54,
+  'PROD_80': 55,
+  'PROD_81': 56,
+  'PROD_82': 57,
+  'PROD_83': 58}}
+labels = sales_target_test['SLSMAN_CD'].astype('category').cat.categories.tolist()
+replace3 = {'SLSMAN_CD':{k: v for k, v in zip(labels,list(range(1,len(labels)+1)))}}
+replace3
+{'SLSMAN_CD': {'SLSMAN_1': 1,
+  'SLSMAN_10': 2,
+  'SLSMAN_100': 3,
+  'SLSMAN_101': 4,
+  'SLSMAN_102': 5,
+  'SLSMAN_103': 6,
+  'SLSMAN_104': 7,
+  'SLSMAN_105': 8,
+  'SLSMAN_106': 9,
+  'SLSMAN_107': 10,
+  'SLSMAN_108': 11,
+  'SLSMAN_109': 12,
+  'SLSMAN_11': 13,
+  'SLSMAN_110': 14,
+  'SLSMAN_111': 15,
+  'SLSMAN_112': 16,
+  'SLSMAN_113': 17,
+  'SLSMAN_114': 18,
+  'SLSMAN_115': 19,
+  'SLSMAN_117': 20,
+  'SLSMAN_119': 21,
+  'SLSMAN_12': 22,
+  'SLSMAN_121': 23,
+  'SLSMAN_122': 24,
+  'SLSMAN_123': 25,
+  'SLSMAN_124': 26,
+  'SLSMAN_125': 27,
+  'SLSMAN_126': 28,
+  'SLSMAN_127': 29,
+  'SLSMAN_128': 30,
+  'SLSMAN_129': 31,
+  'SLSMAN_13': 32,
+  'SLSMAN_130': 33,
+  'SLSMAN_131': 34,
+  'SLSMAN_132': 35,
+  'SLSMAN_134': 36,
+  'SLSMAN_136': 37,
+  'SLSMAN_138': 38,
+  'SLSMAN_139': 39,
+  'SLSMAN_14': 40,
+  'SLSMAN_140': 41,
+  'SLSMAN_141': 42,
+  'SLSMAN_142': 43,
+  'SLSMAN_143': 44,
+  'SLSMAN_144': 45,
+  'SLSMAN_146': 46,
+  'SLSMAN_148': 47,
+  'SLSMAN_15': 48,
+  'SLSMAN_150': 49,
+  'SLSMAN_152': 50,
+  'SLSMAN_154': 51,
+  'SLSMAN_156': 52,
+  'SLSMAN_158': 53,
+  'SLSMAN_159': 54,
+  'SLSMAN_16': 55,
+  'SLSMAN_160': 56,
+  'SLSMAN_161': 57,
+  'SLSMAN_162': 58,
+  'SLSMAN_163': 59,
+  'SLSMAN_164': 60,
+  'SLSMAN_165': 61,
+  'SLSMAN_166': 62,
+  'SLSMAN_168': 63,
+  'SLSMAN_169': 64,
+  'SLSMAN_17': 65,
+  'SLSMAN_170': 66,
+  'SLSMAN_171': 67,
+  'SLSMAN_172': 68,
+  'SLSMAN_173': 69,
+  'SLSMAN_174': 70,
+  'SLSMAN_176': 71,
+  'SLSMAN_178': 72,
+  'SLSMAN_18': 73,
+  'SLSMAN_180': 74,
+  'SLSMAN_181': 75,
+  'SLSMAN_182': 76,
+  'SLSMAN_183': 77,
+  'SLSMAN_184': 78,
+  'SLSMAN_185': 79,
+  'SLSMAN_186': 80,
+  'SLSMAN_19': 81,
+  'SLSMAN_190': 82,
+  'SLSMAN_191': 83,
+  'SLSMAN_192': 84,
+  'SLSMAN_193': 85,
+  'SLSMAN_194': 86,
+  'SLSMAN_195': 87,
+  'SLSMAN_196': 88,
+  'SLSMAN_197': 89,
+  'SLSMAN_198': 90,
+  'SLSMAN_199': 91,
+  'SLSMAN_2': 92,
+  'SLSMAN_200': 93,
+  'SLSMAN_201': 94,
+  'SLSMAN_202': 95,
+  'SLSMAN_204': 96,
+  'SLSMAN_206': 97,
+  'SLSMAN_208': 98,
+  'SLSMAN_209': 99,
+  'SLSMAN_21': 100,
+  'SLSMAN_210': 101,
+  'SLSMAN_211': 102,
+  'SLSMAN_212': 103,
+  'SLSMAN_213': 104,
+  'SLSMAN_214': 105,
+  'SLSMAN_215': 106,
+  'SLSMAN_216': 107,
+  'SLSMAN_217': 108,
+  'SLSMAN_23': 109,
+  'SLSMAN_25': 110,
+  'SLSMAN_27': 111,
+  'SLSMAN_29': 112,
+  'SLSMAN_3': 113,
+  'SLSMAN_30': 114,
+  'SLSMAN_31': 115,
+  'SLSMAN_32': 116,
+  'SLSMAN_33': 117,
+  'SLSMAN_34': 118,
+  'SLSMAN_35': 119,
+  'SLSMAN_36': 120,
+  'SLSMAN_37': 121,
+  'SLSMAN_38': 122,
+  'SLSMAN_39': 123,
+  'SLSMAN_4': 124,
+  'SLSMAN_40': 125,
+  'SLSMAN_41': 126,
+  'SLSMAN_42': 127,
+  'SLSMAN_43': 128,
+  'SLSMAN_44': 129,
+  'SLSMAN_45': 130,
+  'SLSMAN_46': 131,
+  'SLSMAN_47': 132,
+  'SLSMAN_48': 133,
+  'SLSMAN_49': 134,
+  'SLSMAN_5': 135,
+  'SLSMAN_50': 136,
+  'SLSMAN_51': 137,
+  'SLSMAN_52': 138,
+  'SLSMAN_53': 139,
+  'SLSMAN_54': 140,
+  'SLSMAN_56': 141,
+  'SLSMAN_57': 142,
+  'SLSMAN_58': 143,
+  'SLSMAN_6': 144,
+  'SLSMAN_60': 145,
+  'SLSMAN_62': 146,
+  'SLSMAN_64': 147,
+  'SLSMAN_66': 148,
+  'SLSMAN_68': 149,
+  'SLSMAN_7': 150,
+  'SLSMAN_70': 151,
+  'SLSMAN_73': 152,
+  'SLSMAN_74': 153,
+  'SLSMAN_75': 154,
+  'SLSMAN_79': 155,
+  'SLSMAN_8': 156,
+  'SLSMAN_80': 157,
+  'SLSMAN_81': 158,
+  'SLSMAN_82': 159,
+  'SLSMAN_83': 160,
+  'SLSMAN_84': 161,
+  'SLSMAN_85': 162,
+  'SLSMAN_86': 163,
+  'SLSMAN_87': 164,
+  'SLSMAN_88': 165,
+  'SLSMAN_89': 166,
+  'SLSMAN_9': 167,
+  'SLSMAN_90': 168,
+  'SLSMAN_91': 169,
+  'SLSMAN_92': 170,
+  'SLSMAN_93': 171,
+  'SLSMAN_94': 172,
+  'SLSMAN_95': 173,
+  'SLSMAN_96': 174,
+  'SLSMAN_97': 175,
+  'SLSMAN_98': 176,
+  'SLSMAN_99': 177}}
+sales_target2 = sales_target_test.copy()
+sales_target2.replace(replace2,inplace=True)
+print(sales_target2.head(10))
+   PROD_CD SLSMAN_CD  PLAN_MONTH  PLAN_YEAR TARGET_IN_EA  ACH_IN_EA
+0       18  SLSMAN_1           1       2020           40          0
+1       34  SLSMAN_1           1       2020          240          0
+2        1  SLSMAN_1           1       2020          360          0
+3        3  SLSMAN_1           1       2020       12,816          0
+4        4  SLSMAN_1           1       2020       44,460          0
+5        5  SLSMAN_1           1       2020       15,012          0
+6        6  SLSMAN_1           1       2020        2,268          0
+7        7  SLSMAN_1           1       2020       22,320          0
+8        8  SLSMAN_1           1       2020        9,300          0
+9        9  SLSMAN_1           1       2020       19,320          0
+sales_target2.replace(replace3,inplace=True)
+print(sales_target2.head())
+   PROD_CD  SLSMAN_CD  PLAN_MONTH  PLAN_YEAR TARGET_IN_EA  ACH_IN_EA
+0       18          1           1       2020           40          0
+1       34          1           1       2020          240          0
+2        1          1           1       2020          360          0
+3        3          1           1       2020       12,816          0
+4        4          1           1       2020       44,460          0
+sales_target2
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	18	1	1	2020	40	0
+1	34	1	1	2020	240	0
+2	1	1	1	2020	360	0
+3	3	1	1	2020	12,816	0
+4	4	1	1	2020	44,460	0
+...	...	...	...	...	...	...
+5834	44	108	1	2020	1,008	0
+5835	47	108	1	2020	3,948	0
+5836	48	108	1	2020	4,326	0
+5837	55	108	1	2020	936	0
+5838	56	108	1	2020	48	0
+5839 rows × 6 columns
+
+sales_target2.describe()
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	ACH_IN_EA
+count	5839.000000	5839.000000	5839.0	5839.0	5839.0
+mean	24.804590	88.010447	1.0	2020.0	0.0
+std	15.630716	51.760127	0.0	0.0	0.0
+min	1.000000	1.000000	1.0	2020.0	0.0
+25%	12.000000	43.000000	1.0	2020.0	0.0
+50%	24.000000	86.000000	1.0	2020.0	0.0
+75%	35.000000	133.000000	1.0	2020.0	0.0
+max	58.000000	177.000000	1.0	2020.0	0.0
+sales_target2.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 5839 entries, 0 to 5838
+Data columns (total 6 columns):
+ #   Column        Non-Null Count  Dtype 
+---  ------        --------------  ----- 
+ 0   PROD_CD       5839 non-null   int64 
+ 1   SLSMAN_CD     5839 non-null   int64 
+ 2   PLAN_MONTH    5839 non-null   int64 
+ 3   PLAN_YEAR     5839 non-null   int64 
+ 4   TARGET_IN_EA  5839 non-null   object
+ 5   ACH_IN_EA     5839 non-null   int64 
+dtypes: int64(5), object(1)
+memory usage: 273.8+ KB
+sales_target2['TARGET_IN_EA']=sales_target2['TARGET_IN_EA'].str.replace(",","").astype(int)
+sales_target2
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	18	1	1	2020	40	0
+1	34	1	1	2020	240	0
+2	1	1	1	2020	360	0
+3	3	1	1	2020	12816	0
+4	4	1	1	2020	44460	0
+...	...	...	...	...	...	...
+5834	44	108	1	2020	1008	0
+5835	47	108	1	2020	3948	0
+5836	48	108	1	2020	4326	0
+5837	55	108	1	2020	936	0
+5838	56	108	1	2020	48	0
+5839 rows × 6 columns
+
+sns.regplot(x=sales_target2.index.values,y=sales_target2['TARGET_IN_EA'])
+<AxesSubplot:ylabel='TARGET_IN_EA'>
+
+sns.regplot(x=sales_target2.index.values,y=sales_target2['TARGET_IN_EA'],order=2)
+<AxesSubplot:ylabel='TARGET_IN_EA'>
+
+sales_target2.groupby('PLAN_MONTH')['TARGET_IN_EA'].mean()
+PLAN_MONTH
+1    5323.620997
+Name: TARGET_IN_EA, dtype: float64
+#### Auto correlation plot 
+
+from pandas.plotting import autocorrelation_plot
+autocorrelation_plot(sales_target2['TARGET_IN_EA'])
+<AxesSubplot:xlabel='Lag', ylabel='Autocorrelation'>
+
+from statsmodels.tsa.stattools import adfuller
+import matplotlib.pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+from time import time
+import os
+from math import sqrt
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import itertools
+import statsmodels.api as sm
+from sklearn import model_selection
+from sklearn.metrics import mean_squared_error, r2_score
+from pandas import DataFrame
+import xgboost as xgb
+import warnings
+warnings.filterwarnings('ignore')
+import statsmodels.formula.api as smf 
+from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+from sklearn.base import TransformerMixin    ##### Mixin class for all transformers in scikit-learn.#####\
+from sklearn.preprocessing import MinMaxScaler
+import statsmodels.api as sm
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LinearRegression
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.metrics import r2_score
+sales_target1.corr()
+sales_target1.PLAN_MONTH.corr(sales_target1.ACH_IN_EA) # # correlation value between X and Y
+np.corrcoef(sales_target1.PLAN_MONTH,sales_target1.ACH_IN_EA)
+array([[ 1.        , -0.02207419],
+       [-0.02207419,  1.        ]])
+sales_target1.corr()
+sales_target1.TARGET_IN_EA.corr(sales_target1.ACH_IN_EA) # # correlation value between X and Y
+np.corrcoef(sales_target1.TARGET_IN_EA,sales_target1.ACH_IN_EA)
+array([[1.        , 0.88478392],
+       [0.88478392, 1.        ]])
+X_train = sales_target1
+X_test = sales_target2
+y_test = sales_target2.pop('ACH_IN_EA')
+X = X_train.iloc[:, :-1]
+y = X_train.iloc[:, -1]
+
+print("Shape of X:", X.shape)
+print("Shape of y:", y.shape)
+Shape of X: (22469, 5)
+Shape of y: (22469,)
+X_test
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	18	1	1	2020	40	0
+1	34	1	1	2020	240	0
+2	1	1	1	2020	360	0
+3	3	1	1	2020	12816	0
+4	4	1	1	2020	44460	0
+...	...	...	...	...	...	...
+5834	44	108	1	2020	1008	0
+5835	47	108	1	2020	3948	0
+5836	48	108	1	2020	4326	0
+5837	55	108	1	2020	936	0
+5838	56	108	1	2020	48	0
+5839 rows × 6 columns
+
+x_train, x_valid, y_train, y_valid = train_test_split(X, y, test_size = 0.2, random_state = 0)
+
+print("Shape of x_train: ", x_train.shape)
+print("Shape of x_valid: ", x_valid.shape)
+print("Shape of y_train: ", y_train.shape)
+print("Shape of y_valid: ", y_valid.shape)
+Shape of x_train:  (17975, 5)
+Shape of x_valid:  (4494, 5)
+Shape of y_train:  (17975,)
+Shape of y_valid:  (4494,)
+from sklearn.preprocessing import StandardScaler
+scale_col = ['TARGET_IN_EA','ACH_IN_EA']
+
+
+sc = preprocessing.StandardScaler()
+X_train[scale_col] = sc.fit_transform(X_train[scale_col])
+scale_col1 = ['TARGET_IN_EA']
+sc = preprocessing.StandardScaler()
+X_test[scale_col1] = sc.fit_transform(X_test[scale_col1])
+X_train_1 = x_train[['PROD_CD','SLSMAN_CD','PLAN_MONTH','PLAN_YEAR','TARGET_IN_EA']]
+# Add a constant
+X_train_1c = sm.add_constant(X_train_1)
+lr_1 = sm.OLS(y_train, X_train_1c).fit()
+lr_1.params
+PROD_CD         0.000607
+SLSMAN_CD       0.000099
+PLAN_MONTH      0.004359
+PLAN_YEAR      -0.000041
+TARGET_IN_EA    0.884157
+dtype: float64
+lr_1.summary()
+OLS Regression Results
+Dep. Variable:	ACH_IN_EA	R-squared:	0.788
+Model:	OLS	Adj. R-squared:	0.787
+Method:	Least Squares	F-statistic:	1.665e+04
+Date:	Sat, 10 Oct 2020	Prob (F-statistic):	0.00
+Time:	13:08:00	Log-Likelihood:	-11526.
+No. Observations:	17975	AIC:	2.306e+04
+Df Residuals:	17970	BIC:	2.310e+04
+Df Model:	4		
+Covariance Type:	nonrobust		
+coef	std err	t	P>|t|	[0.025	0.975]
+PROD_CD	0.0006	0.000	4.165	0.000	0.000	0.001
+SLSMAN_CD	9.913e-05	5.15e-05	1.925	0.054	-1.81e-06	0.000
+PLAN_MONTH	0.0044	0.004	1.016	0.310	-0.004	0.013
+PLAN_YEAR	-4.066e-05	2.36e-05	-1.720	0.086	-8.7e-05	5.68e-06
+TARGET_IN_EA	0.8842	0.003	257.276	0.000	0.877	0.891
+Omnibus:	20825.804	Durbin-Watson:	2.005
+Prob(Omnibus):	0.000	Jarque-Bera (JB):	57600977.707
+Skew:	4.941	Prob(JB):	0.00
+Kurtosis:	280.147	Cond. No.	2.53e+03
+
+
+Warnings:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 2.53e+03. This might indicate that there are
+strong multicollinearity or other numerical problems.
+X_test_1 = X_test[['PROD_CD','SLSMAN_CD','PLAN_MONTH','PLAN_YEAR','TARGET_IN_EA']]
+X_test_1c = sm.add_constant(X_test_1)
+# Making predictions using the final model
+y_pred = lr_1.predict(X_test_1c)
+y_pred
+0      -0.419895
+1      -0.396815
+2      -0.408827
+3       0.424905
+4       2.540490
+          ...   
+5834   -0.328807
+5835   -0.130486
+5836   -0.104615
+5837   -0.326942
+5838   -0.385686
+Length: 5839, dtype: float64
+X_test
+PROD_CD	SLSMAN_CD	PLAN_MONTH	PLAN_YEAR	TARGET_IN_EA	ACH_IN_EA
+0	18	1	1	2020	-0.399408	0
+1	34	1	1	2020	-0.384289	0
+2	1	1	1	2020	-0.375218	0
+3	3	1	1	2020	0.566376	0
+4	4	1	1	2020	2.958459	0
+...	...	...	...	...	...	...
+5834	44	108	1	2020	-0.326233	0
+5835	47	108	1	2020	-0.103988	0
+5836	48	108	1	2020	-0.075414	0
+5837	55	108	1	2020	-0.331676	0
+5838	56	108	1	2020	-0.398803	0
+5839 rows × 6 columns
+
+MSE = mean_squared_error(y_test, y_pred)
+RMSE = np.sqrt(MSE)
+RMSE
+0.8857588473498801
+X_train_2 = x_train[['PROD_CD','SLSMAN_CD','TARGET_IN_EA']]
+# Add a constant
+X_train_2c = sm.add_constant(X_train_2)
+lr_2 = sm.OLS(y_train, X_train_2c).fit()
+lr_2.params
+const          -0.034350
+PROD_CD         0.000617
+SLSMAN_CD       0.000099
+TARGET_IN_EA    0.884085
+dtype: float64
+lr_2.summary()
+OLS Regression Results
+Dep. Variable:	ACH_IN_EA	R-squared:	0.788
+Model:	OLS	Adj. R-squared:	0.787
+Method:	Least Squares	F-statistic:	2.220e+04
+Date:	Sat, 10 Oct 2020	Prob (F-statistic):	0.00
+Time:	13:23:01	Log-Likelihood:	-11527.
+No. Observations:	17975	AIC:	2.306e+04
+Df Residuals:	17971	BIC:	2.309e+04
+Df Model:	3		
+Covariance Type:	nonrobust		
+coef	std err	t	P>|t|	[0.025	0.975]
+const	-0.0343	0.008	-4.122	0.000	-0.051	-0.018
+PROD_CD	0.0006	0.000	4.243	0.000	0.000	0.001
+SLSMAN_CD	9.934e-05	5.15e-05	1.929	0.054	-1.6e-06	0.000
+TARGET_IN_EA	0.8841	0.003	257.310	0.000	0.877	0.891
+Omnibus:	20839.919	Durbin-Watson:	2.005
+Prob(Omnibus):	0.000	Jarque-Bera (JB):	57622773.553
+Skew:	4.948	Prob(JB):	0.00
+Kurtosis:	280.199	Cond. No.	323.
+
+
+Warnings:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+X_test_2 = X_test[['PROD_CD','SLSMAN_CD','TARGET_IN_EA']]
+X_test_2c = sm.add_constant(X_test_2)
+# Making predictions using the final model
+y_pred1 = lr_1.predict(X_test_2c)
+y_pred1
+0      -0.376256
+1      -0.353018
+2      -0.365358
+3       0.468325
+4       2.583748
+          ...   
+5834   -0.284893
+5835   -0.086558
+5836   -0.060679
+5837   -0.282918
+5838   -0.341647
+Length: 5839, dtype: float64
+MSE = mean_squared_error(y_test, y_pred1)
+RMSE = np.sqrt(MSE)
+RMSE
+0.8840970308178401
+from sklearn import metrics
+print('MAE:',metrics.mean_absolute_error(y_test,y_pred))
+print('MSE:',metrics.mean_squared_error(y_test,y_pred))
+MAE: 0.4926142353372584
+MSE: 0.7845687356585882
+##### Applying RandomForestRegressor 
+from sklearn.ensemble import RandomForestRegressor
+reg_rf = RandomForestRegressor()
+reg_rf.fit(x_train,y_train)
+RandomForestRegressor()
+y_pred2 = reg_rf.predict(X_test_1)
+reg_rf.score(x_train,y_train)
+0.9790269042821917
+MSE = mean_squared_error(y_test, y_pred2)
+RMSE = np.sqrt(MSE)
+RMSE
+0.8947703000490134
+print('MAE:',metrics.mean_absolute_error(y_test,y_pred2))
+print('MSE:',metrics.mean_squared_error(y_test,y_pred2))
+MAE: 0.47361430434259477
+MSE: 0.8006138898498014
+##### Applying hyperparameter tunning 
+
+from sklearn.model_selection import RandomizedSearchCV
+
+##### no. of trees in the random forest 
+n_estimators = [int(x) for x in np.linspace(start = 100, stop = 700, num = 12)]
+
+####### no. of features to consider in every split #########
+
+max_features = ['auto','sqrt']
+
+###### max no. of levels in tree########### 
+
+max_depth = [int(x) for x in np.linspace(5,30, num = 6)]
+
+##### min. no of samples required to split a node ######## 
+
+min_samples_split = [2,5,10,15,100]
+
+####### min no. of samples required at each leaf node ####### 
+
+min_samples_leaf = [1,2,5,10]
+random_grid = {'n_estimators': n_estimators,
+               'max_features': max_features,
+               'max_depth': max_depth,
+               'min_samples_split': min_samples_split,
+               'min_samples_leaf': min_samples_leaf}
+rf_random = RandomizedSearchCV(estimator = reg_rf,param_distributions= random_grid,scoring='neg_mean_squared_error',n_iter = 10, cv =5,verbose=2,random_state=42,n_jobs=1)
+rf_random.fit(x_train,y_train)
+Fitting 5 folds for each of 10 candidates, totalling 50 fits
+[CV] n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10 
+[Parallel(n_jobs=1)]: Using backend SequentialBackend with 1 concurrent workers.
+[CV]  n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10, total=   7.7s
+[CV] n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10 
+[Parallel(n_jobs=1)]: Done   1 out of   1 | elapsed:    7.6s remaining:    0.0s
+[CV]  n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10, total=   7.0s
+[CV] n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10 
+[CV]  n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10, total=   7.1s
+[CV] n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10 
+[CV]  n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10, total=   6.9s
+[CV] n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10 
+[CV]  n_estimators=536, min_samples_split=5, min_samples_leaf=5, max_features=sqrt, max_depth=10, total=   6.9s
+[CV] n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15, total=  11.6s
+[CV] n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15, total=  11.2s
+[CV] n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15, total=  11.2s
+[CV] n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15, total=  11.0s
+[CV] n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=645, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=15, total=  11.3s
+[CV] n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15, total=   5.4s
+[CV] n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15, total=   5.4s
+[CV] n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15, total=   5.3s
+[CV] n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15, total=   5.2s
+[CV] n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=100, min_samples_leaf=5, max_features=auto, max_depth=15, total=   5.4s
+[CV] n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15, total=   8.3s
+[CV] n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15, total=   8.6s
+[CV] n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15, total=   8.3s
+[CV] n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15, total=   8.4s
+[CV] n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15 
+[CV]  n_estimators=263, min_samples_split=5, min_samples_leaf=5, max_features=auto, max_depth=15, total=   8.2s
+[CV] n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20, total=  13.1s
+[CV] n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20, total=  13.0s
+[CV] n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20, total=  13.1s
+[CV] n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20, total=  12.8s
+[CV] n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=5, min_samples_leaf=10, max_features=auto, max_depth=20, total=  12.9s
+[CV] n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25 
+[CV]  n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25, total=  18.8s
+[CV] n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25 
+[CV]  n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25, total=  19.0s
+[CV] n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25 
+[CV]  n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25, total=  18.9s
+[CV] n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25 
+[CV]  n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25, total=  28.6s
+[CV] n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25 
+[CV]  n_estimators=590, min_samples_split=2, min_samples_leaf=1, max_features=sqrt, max_depth=25, total=  18.7s
+[CV] n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5, total=   5.1s
+[CV] n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5, total=   4.9s
+[CV] n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5, total=   5.3s
+[CV] n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5, total=   5.0s
+[CV] n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=645, min_samples_split=15, min_samples_leaf=10, max_features=sqrt, max_depth=5, total=   5.0s
+[CV] n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15, total=   3.8s
+[CV] n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15, total=   3.6s
+[CV] n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15, total=   3.4s
+[CV] n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15, total=   3.5s
+[CV] n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15 
+[CV]  n_estimators=209, min_samples_split=15, min_samples_leaf=1, max_features=sqrt, max_depth=15, total=   3.8s
+[CV] n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5, total=   3.6s
+[CV] n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5, total=   3.3s
+[CV] n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5, total=   3.2s
+[CV] n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5, total=   3.3s
+[CV] n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5 
+[CV]  n_estimators=427, min_samples_split=10, min_samples_leaf=2, max_features=sqrt, max_depth=5, total=   3.6s
+[CV] n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20, total=  14.4s
+[CV] n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20, total=  14.7s
+[CV] n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20, total=  14.6s
+[CV] n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20, total=  14.6s
+[CV] n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20 
+[CV]  n_estimators=427, min_samples_split=15, min_samples_leaf=1, max_features=auto, max_depth=20, total=  14.6s
+[Parallel(n_jobs=1)]: Done  50 out of  50 | elapsed:  7.7min finished
+RandomizedSearchCV(cv=5, estimator=RandomForestRegressor(), n_jobs=1,
+                   param_distributions={'max_depth': [5, 10, 15, 20, 25, 30],
+                                        'max_features': ['auto', 'sqrt'],
+                                        'min_samples_leaf': [1, 2, 5, 10],
+                                        'min_samples_split': [2, 5, 10, 15,
+                                                              100],
+                                        'n_estimators': [100, 154, 209, 263,
+                                                         318, 372, 427, 481,
+                                                         536, 590, 645, 700]},
+                   random_state=42, scoring='neg_mean_squared_error',
+                   verbose=2)
+rf_random.best_params_
+{'n_estimators': 590,
+ 'min_samples_split': 2,
+ 'min_samples_leaf': 1,
+ 'max_features': 'sqrt',
+ 'max_depth': 25}
+y_pred3 = rf_random.predict(X_test_1)
+y_pred3
+array([-0.28597663, -0.27012582, -0.25393592, ..., -0.0848954 ,
+       -0.3221829 , -0.29331183])
+print('MAE:',metrics.mean_absolute_error(y_test,y_pred3))
+print('MSE:',metrics.mean_squared_error(y_test,y_pred3))
+print('RMsE:',np.sqrt(metrics.mean_squared_error(y_test,y_pred3)))
+MAE: 0.4442016107294985
+MSE: 0.6525619855792285
+RMsE: 0.8078130882693276
+##### Applying XGboost hyperparameter tunning 
+import xgboost as xgb
+xg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.3, learning_rate = 0.1,
+                max_depth = 5, alpha = 10, n_estimators = 10)
+xg_reg.fit(x_train,y_train)
+[14:57:24] WARNING: C:/Users/Administrator/workspace/xgboost-win64_release_1.2.0/src/objective/regression_obj.cu:174: reg:linear is now deprecated in favor of reg:squarederror.
+[14:57:26] WARNING: C:/Users/Administrator/workspace/xgboost-win64_release_1.2.0/src/objective/regression_obj.cu:174: reg:linear is now deprecated in favor of reg:squarederror.
+XGBRegressor(alpha=10, base_score=0.5, booster='gbtree', colsample_bylevel=1,
+             colsample_bynode=1, colsample_bytree=0.3, gamma=0, gpu_id=-1,
+             importance_type='gain', interaction_constraints='',
+             learning_rate=0.1, max_delta_step=0, max_depth=5,
+             min_child_weight=1, missing=nan, monotone_constraints='()',
+             n_estimators=10, n_jobs=0, num_parallel_tree=1,
+             objective='reg:linear', random_state=0, reg_alpha=10, reg_lambda=1,
+             scale_pos_weight=1, subsample=1, tree_method='exact',
+             validate_parameters=1, verbosity=None)
+y_pred4 = xg_reg.predict(X_test_1)
+y_pred4
+array([0.05575189, 0.06982344, 0.04448593, ..., 0.08019412, 0.05541292,
+       0.07568032], dtype=float32)
+print('MAE:',metrics.mean_absolute_error(y_test,y_pred4))
+print('MSE:',metrics.mean_squared_error(y_test,y_pred4))
+print('RMsE:',np.sqrt(metrics.mean_squared_error(y_test,y_pred4)))
+MAE: 0.16224259910854621
+MSE: 0.05843493196920608
+RMsE: 0.24173318342587158
+ 
